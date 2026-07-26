@@ -1,4 +1,4 @@
-{
+﻿{
     Copyright (c) 2024- by Michael Van Canneyt
 
     This unit handles the compiler tasks.
@@ -1146,7 +1146,11 @@ var
       uu:=tused_unit(m.used_units.First);
       while assigned(uu) do
         begin
-          if not uu.u.scc_finished then
+          { TODO(win64-packages): a package leaves used_unit entries whose module
+            is still nil -- the `contains` list is not resolved the way a `uses`
+            list is. Guarding here only stops the crash; find out why the entry
+            is unresolved once packages build end to end. }
+          if assigned(uu.u) and not uu.u.scc_finished then
             scc_clear(uu.u);
           uu:=tused_unit(uu.Next);
         end;

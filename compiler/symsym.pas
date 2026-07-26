@@ -1,4 +1,4 @@
-{
+﻿{
     Copyright (c) 1998-2002 by Florian Klaempfl, Pierre Muller
 
     Implementation for the symbols types of the symtable
@@ -775,7 +775,10 @@ implementation
         if assigned(owner) then
           begin
             tmod:=find_module_from_symtable(owner);
-            if assigned(tmod) and assigned(current_module) and (tmod<>current_module) then
+            { see the matching comment in tstoreddef.register_def -- a package
+              registers symbols owned by its contained units on purpose }
+            if assigned(tmod) and assigned(current_module) and (tmod<>current_module) and
+               not current_module.ispackage then
               begin
                 comment(v_error,'Symbol '+realname+' from module '+tmod.mainsource+' registered with current module '+current_module.mainsource);
               end;

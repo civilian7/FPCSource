@@ -109,3 +109,9 @@ units
 bin/
 fpmake
 packages/fcl-db/tests/database.ini
+compiler/ppcx64_pkg.exe
+compiler/msg2inc.exe
+compiler/msgtxt.inc
+compiler/msgidx.inc
+compiler/*.ppu
+compiler/*.o

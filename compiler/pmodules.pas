@@ -1,4 +1,4 @@
-{
+﻿{
     Copyright (c) 1998-2008 by Florian Klaempfl
 
     Handles the parsing and loading of the modules (ppufiles)
@@ -2096,6 +2096,7 @@ type
         module_name: ansistring;
         pentry: ppackageentry;
         feature : tfeature;
+        load_ok : boolean;
       begin
          Result:=True;
          Status.IsPackage:=true;
@@ -2178,6 +2179,29 @@ type
          { insert after the unit symbol tables the static symbol table }
          { of the program                                             }
          curr.localsymtable:=tstaticsymtable.create(curr.realmodulename^,curr.moduleid);
+
+         { load system unit -- must happen before anything creates defs, because
+           the intern types (uinttype, voidpointertype, bool32type, ...) live in
+           it. proc_program and proc_unit both do this right after creating the
+           local symtable; proc_package was missing it entirely, so the DLLMain
+           stub built by create_main_proc below dereferenced nil type defs. }
+         load_ok:=loadsystemunit(curr);
+
+         { system unit is loaded, now insert feature defines }
+         for feature:=low(tfeature) to high(tfeature) do
+           if feature in features then
+             def_system_macro('FPC_HAS_FEATURE_'+featurestr[feature]);
+
+         { load standard units, e.g. objpas }
+         if not(cs_compilesystem in current_settings.moduleswitches) then
+           load_ok:=loaddefaultunits(curr) and load_ok;
+
+         { TODO: proc_program/proc_unit set ms_compiling_wait here when load_ok
+           is false, so the ctask scheduler can finish the dependencies first.
+           proc_package does everything in one pass and has no such exit point
+           yet -- revisit once packages compile at all. }
+         if not load_ok then
+           Message1(parser_e_packages_not_supported,target_info.name);
 
          { ensure that no packages are picked up from the options }
          packagelist.clear;

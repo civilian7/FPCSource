@@ -1,0 +1,8 @@
+package TestPkg;
+
+{$mode delphi}
+
+contains
+  PkgUnit;
+
+end.
