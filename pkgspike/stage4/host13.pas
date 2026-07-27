@@ -23,7 +23,12 @@ program host13;
     언로드 후 TPersistent  = TRUE   (살아 있는 이미지는 과잉 제거 없음)
     exit 0
 
-  수정 전에는 "GetClass 호출 직전" 까지만 찍히고 액세스 위반으로 죽는다. }
+  수정 전에는 "GetClass 호출 직전" 까지만 찍히고 액세스 위반으로 죽는다.
+
+  전부 Halt(1) 로 기계 검사한다 - 값만 찍으면 과잉 제거가 조용히
+  통과해버린다. 다만 여기 TPersistent 는 rtlpkg 소속이고 rtlpkg 는
+  로드타임 바인딩이라 "전부 날리지는 않는다" 까지만 증명한다.
+  실제 판별력(살아 있는 의존은 남아야 한다)은 host14 가 본다. }
 
 {$mode delphi}
 
@@ -76,27 +81,54 @@ begin
 end;
 
 var
+  GFailed: Boolean = False;
+
+{ 기대와 다르면 기록해 두고 마지막에 Halt(1). }
+procedure Expect(const AWhat: string; AActual, AExpected: Boolean);
+const
+  NAMES: array[Boolean] of string = ('FALSE', 'TRUE');
+begin
+  if AActual = AExpected then
+  begin
+    WriteLn('  [OK]   ', AWhat, ' = ', NAMES[AActual]);
+  end
+  else
+  begin
+    WriteLn('  [FAIL] ', AWhat, ' = ', NAMES[AActual], ' (기대 ', NAMES[AExpected], ')');
+    GFailed := True;
+  end;
+end;
+
+var
   GLib: HMODULE;
 begin
-  WriteLn('로드 전 BasePkg   : ', IsMapped('BasePkg.dll'));
+  Expect('로드 전 BasePkg 매핑', IsMapped('BasePkg.dll'), False);
 
+  { LoadPackage 는 실패하면 EPackageError 를 던진다. 돌아왔다는 사실
+    자체가 성공이므로 핸들을 0 과 비교해봐야 항상 참이다 - 대신
+    의존 패키지가 함께 매핑됐는지를 본다. }
   GLib := LoadPackage('RegPkg.dll');
-  WriteLn('LoadPackage       : ', GLib <> 0);
-  WriteLn('로드 후 BasePkg   : ', IsMapped('BasePkg.dll'), ' (기대 TRUE - 의존으로 매핑)');
+  Expect('로드 후 BasePkg 매핑 (의존으로 매핑)', IsMapped('BasePkg.dll'), True);
 
   CallRegisterProcs(GLib);
-  WriteLn('등록 후 TRegDemo  : ', Assigned(GetClass('TRegDemo')));
-  WriteLn('등록 후 TBaseThing: ', Assigned(GetClass('TBaseThing')), ' (조상 체인 등록)');
+  Expect('등록 후 TRegDemo', Assigned(GetClass('TRegDemo')), True);
+  Expect('등록 후 TBaseThing (조상 체인 등록)', Assigned(GetClass('TBaseThing')), True);
 
   UnloadPackage(GLib);
-  WriteLn('언로드 후 BasePkg : ', IsMapped('BasePkg.dll'), ' (기대 FALSE - 통지 없이 언매핑)');
+  Expect('언로드 후 BasePkg 매핑 (통지 없이 언매핑)', IsMapped('BasePkg.dll'), False);
 
   { 여기서부터가 문제 구간이다. 수정 전이라면 아래 GetClass 가
     언매핑된 이미지의 VMT 를 읽고 죽는다. }
   WriteLn('GetClass 호출 직전');
-  WriteLn('언로드 후 TBaseThing: ', Assigned(GetClass('TBaseThing')), ' (기대 FALSE)');
-  WriteLn('언로드 후 TRegDemo  : ', Assigned(GetClass('TRegDemo')), ' (기대 FALSE)');
-  WriteLn('언로드 후 TPersistent: ', Assigned(GetClass('TPersistent')), ' (기대 TRUE - 과잉 제거 없음)');
+  Expect('언로드 후 TBaseThing', Assigned(GetClass('TBaseThing')), False);
+  Expect('언로드 후 TRegDemo', Assigned(GetClass('TRegDemo')), False);
+  Expect('언로드 후 TPersistent (과잉 제거 없음)', Assigned(GetClass('TPersistent')), True);
+
+  if GFailed then
+  begin
+    WriteLn('host13 FAILED');
+    Halt(1);
+  end;
 
   WriteLn('host13 ok');
 end.

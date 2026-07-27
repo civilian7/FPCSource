@@ -12,7 +12,11 @@ program host12;
     언로드 전  GetClass(TLazyPlugin) = TRUE
     언로드 후  GetClass(TLazyPlugin) = FALSE  (훅이 치웠다)
     언로드 후  GetClass(TPersistent) = TRUE   (남의 이미지는 안 건드림)
-    exit 0 (종료 경로 포함 깨끗) }
+    exit 0 (종료 경로 포함 깨끗)
+
+  기대값은 전부 Require 로 기계 검사한다. 값만 찍으면 과잉 제거
+  (TPersistent 가 FALSE 가 되는 회귀)가 exit 0 으로 조용히 통과한다 -
+  이 가드가 존재하는 이유가 바로 그것이다. }
 
 {$mode delphi}
 
@@ -20,6 +24,22 @@ uses
   Windows,
   SysUtils,
   Classes;
+
+var
+  GFailed: Boolean = False;
+
+{ 통과하면 아무것도 찍지 않는다 - 위 출력 형식을 그대로 보존하기 위해서다.
+  어긋날 때만 말하고 마지막에 Halt(1) 한다. }
+procedure Require(const AWhat: string; AActual, AExpected: Boolean);
+const
+  NAMES: array[Boolean] of string = ('FALSE', 'TRUE');
+begin
+  if AActual <> AExpected then
+  begin
+    WriteLn('  [FAIL] ', AWhat, ' = ', NAMES[AActual], ' (기대 ', NAMES[AExpected], ')');
+    GFailed := True;
+  end;
+end;
 
 { 임시 AnsiString(패키지 리터럴)이 언로드 전에 해제되도록 격리 - 언로드 계약 }
 procedure RunPlugin;
@@ -29,6 +49,7 @@ var
 begin
   LCls := GetClass('TLazyPlugin');
   WriteLn('로드 후 GetClass  : ', Assigned(LCls));
+  Require('로드 후 TLazyPlugin', Assigned(LCls), True);
   if not Assigned(LCls) then
   begin
     Exit;
@@ -45,8 +66,12 @@ end;
 
 var
   GLib: HMODULE;
+  GLazy: Boolean;
+  GPersist: Boolean;
 begin
-  WriteLn('로드 전 GetClass  : ', Assigned(GetClass('TLazyPlugin')));
+  GLazy := Assigned(GetClass('TLazyPlugin'));
+  WriteLn('로드 전 GetClass  : ', GLazy);
+  Require('로드 전 TLazyPlugin', GLazy, False);
 
   GLib := LoadPackage('LazyPkg.dll');
   WriteLn('LoadPackage       : ', GLib <> 0);
@@ -54,14 +79,30 @@ begin
   RunPlugin;
 
   UnloadPackage(GLib);
-  WriteLn('언로드 후 Lazy    : ', Assigned(GetClass('TLazyPlugin')), ' (기대 FALSE - 훅이 치움)');
-  WriteLn('언로드 후 Persist : ', Assigned(GetClass('TPersistent')), ' (기대 TRUE - 과잉 제거 없음)');
+  GLazy := Assigned(GetClass('TLazyPlugin'));
+  WriteLn('언로드 후 Lazy    : ', GLazy, ' (기대 FALSE - 훅이 치움)');
+  Require('언로드 후 TLazyPlugin', GLazy, False);
+
+  GPersist := Assigned(GetClass('TPersistent'));
+  WriteLn('언로드 후 Persist : ', GPersist, ' (기대 TRUE - 과잉 제거 없음)');
+  Require('언로드 후 TPersistent (과잉 제거)', GPersist, True);
 
   { 두 번째 사이클 - 재로드가 멀쩡한지 }
   GLib := LoadPackage('LazyPkg.dll');
-  WriteLn('재로드 GetClass   : ', Assigned(GetClass('TLazyPlugin')));
+  GLazy := Assigned(GetClass('TLazyPlugin'));
+  WriteLn('재로드 GetClass   : ', GLazy);
+  Require('재로드 TLazyPlugin', GLazy, True);
+
   UnloadPackage(GLib);
-  WriteLn('재언로드 Lazy     : ', Assigned(GetClass('TLazyPlugin')));
+  GLazy := Assigned(GetClass('TLazyPlugin'));
+  WriteLn('재언로드 Lazy     : ', GLazy);
+  Require('재언로드 TLazyPlugin', GLazy, False);
+
+  if GFailed then
+  begin
+    WriteLn('host12 FAILED');
+    Halt(1);
+  end;
 
   WriteLn('host12 ok');
 end.
