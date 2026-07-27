@@ -311,8 +311,17 @@ begin
   if pg.Classes = nil then
     pg.Classes := TList.Create;
 
+  { Registering the same class on the same page twice is meaningless, so skip
+    duplicates. This is not just tidiness: it is what keeps the list from
+    growing across install/uninstall/reinstall of a package. UnRegisterModule-
+    Components runs from the unload notification, i.e. before FreeLibrary, so
+    entries whose image is only unmapped afterwards as a dependency survive
+    the sweep. A package reloaded later is normally mapped at its previous
+    base again, which makes the class pointers it registers *equal* to those
+    leftovers -- so filtering by value merges them instead of accumulating. }
   for i := Low(ComponentClasses) to High(ComponentClasses) do
-    pg.Classes.Add(ComponentClasses[i]);
+    if pg.Classes.IndexOf(ComponentClasses[i]) < 0 then
+      pg.Classes.Add(ComponentClasses[i]);
 
   if Assigned(RegisterComponentsProc) then
     RegisterComponentsProc(Page, ComponentClasses);
@@ -331,8 +340,12 @@ begin
   if pg.Classes = nil then
     pg.Classes := TList.Create;
 
+  { skip duplicates for the same reason as in RegisterComponents above; page 0
+    needs it more, since the unload sweep never frees this page even when it
+    empties, so leftovers here are only ever merged away, never dropped }
   for i := Low(ComponentClasses) to High(ComponentClasses) do
-    pg.Classes.Add(ComponentClasses[i]);
+    if pg.Classes.IndexOf(ComponentClasses[i]) < 0 then
+      pg.Classes.Add(ComponentClasses[i]);
 
   if Assigned(RegisterNoIconProc) then
     RegisterNoIconProc(ComponentClasses);
