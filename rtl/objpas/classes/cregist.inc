@@ -41,16 +41,28 @@ end;
 procedure RegisterClassAlias(AClass: TPersistentClass; const Alias: string);
   var
     I : integer;
+    S : string;
   begin
     I:=-1;
+    { Alias usually is a constant living in the caller's data section, so
+      storing it below would only copy a pointer with refcount -1. If the
+      caller is a package, that data section goes away on UnloadPackage, and
+      both TStringList.Delete and the finalization of ClassAliasList would
+      then finalize a string body at an unmapped address. An alias is only
+      dropped when its class is unregistered, so one registered for a class
+      owned by another module outlives its registrar for certain. Force a
+      private copy on the host heap instead, so the stored alias outlives any
+      package. }
+    S:=Alias;
+    UniqueString(S);
     ClassList.LockList;
     try
       if ClassAliasList=nil then
         ClassAliasList := TStringList.Create
       else
-        i := ClassAliasList.IndexOf(Alias);
+        i := ClassAliasList.IndexOf(S);
       if I = -1 then
-        ClassAliasList.AddObject( Alias, TObject(AClass) );
+        ClassAliasList.AddObject( S, TObject(AClass) );
     finally
       ClassList.UnlockList;
     end;
@@ -94,22 +106,58 @@ begin
 end;
 
 
+{$if defined(WIN32) or defined(WIN64)}
+function StaleRegistryEntry(P: Pointer; Module: HMODULE): Boolean;
+var
+  info : TMemoryBasicInformation;
+begin
+  if VirtualQuery(P,info,SizeOf(info))<>SizeOf(info) then
+    begin
+      { the address is not part of this process' address space at all, so
+        whatever put it in the registry is long gone }
+      Result:=True;
+      exit;
+    end;
+  { Either the entry belongs to the departing image, or it points at memory
+    that is no longer committed. The second case catches an image that was
+    unmapped as a *dependency*: UnloadPackage notifies the subscribers with
+    the handle of the package it was asked to unload and only then calls
+    FreeLibrary, which drops the reference counts of everything that package
+    requires. An image released that way is unmapped without a module unload
+    notification of its own, so its entries never matched any Module and
+    stayed behind. Memory that is no longer committed cannot belong to any
+    live class, so such entries are safe to drop.
+
+    Note this only reclaims entries whose image is still unmapped when some
+    later unload runs the sweep. It does not bound growth across an
+    install/uninstall/reinstall cycle of the same package: the sweep runs
+    from the unload notification, i.e. before FreeLibrary, and a package
+    reloaded in between is normally mapped at its previous base again (these
+    images have a fixed image base, so the addresses coincide exactly), which
+    makes the leftovers indistinguishable from the live registrations. Fixing
+    that needs the registering module recorded per entry, which this list has
+    never carried. }
+  Result:=(HMODULE(info.AllocationBase)=Module) or (info.State<>MEM_COMMIT);
+end;
+{$endif}
+
 procedure UnRegisterModuleClasses(Module: HMODULE);
 {$if defined(WIN32) or defined(WIN64)}
 var
   i : Integer;
-  info : TMemoryBasicInformation;
 begin
   { drop every class whose VMT lives inside the departing image.
     RegisterClass registers the whole ancestor chain, so a package's
     finalization (which typically unregisters only its own classes)
     leaves ancestors behind; any of those belonging to the unloaded
-    module would dangle in the list. }
+    module would dangle in the list. The chain also crosses images -- a
+    design-time package registering a class derived from one in the runtime
+    package it requires puts that ancestor here -- so entries orphaned by an
+    earlier dependency unmap go too. }
   with ClassList.LockList do
     try
       for i:=Count-1 downto 0 do
-        if (VirtualQuery(Items[i],info,SizeOf(info))=SizeOf(info)) and
-           (HMODULE(info.AllocationBase)=Module) then
+        if StaleRegistryEntry(Items[i],Module) then
           UnRegisterClass(TPersistentClass(Items[i]));
     finally
       ClassList.UnlockList;
@@ -303,13 +351,17 @@ procedure UnRegisterModuleComponents(Module: HMODULE);
 var
   i,j : Integer;
   pg : TComponentPage;
-  info : TMemoryBasicInformation;
 begin
   { counterpart of UnRegisterModuleClasses for the component palette.
     RegisterComponents/RegisterNoIcon record the component classes here
     before handing them to the IDE hook, so a package that unregisters
     itself through that hook still leaves its VMT pointers in this list;
-    they would dangle once the image is unmapped. }
+    they would dangle once the image is unmapped. Registration and
+    implementation routinely live in different images -- the unit calling
+    RegisterComponents sits in the design-time package while the component
+    classes come from the runtime package it requires -- so this list is the
+    likeliest place to find entries orphaned by an earlier dependency unmap,
+    and StaleRegistryEntry sweeps those out as well. }
   if not Assigned(ComponentPages) then
     exit;
   for i:=ComponentPages.Count-1 downto 0 do
@@ -317,8 +369,7 @@ begin
       pg:=TComponentPage(ComponentPages.Items[i]);
       if Assigned(pg.Classes) then
         for j:=pg.Classes.Count-1 downto 0 do
-          if (VirtualQuery(pg.Classes[j],info,SizeOf(info))=SizeOf(info)) and
-             (HMODULE(info.AllocationBase)=Module) then
+          if StaleRegistryEntry(pg.Classes[j],Module) then
             pg.Classes.Delete(j);
       { A page that lost all its components is dropped, except for index 0:
         that one is the page reserved for the NoIcon components and
