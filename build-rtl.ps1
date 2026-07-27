@@ -1,4 +1,4 @@
-# 패키지 모드(indirect ABI)로 RTL 을 다시 빌드한다.
+﻿# 패키지 모드(indirect ABI)로 RTL 을 다시 빌드한다.
 #
 # ⚠️ 왜 필요한가 — `tf_supports_packages` 는 프로젝트별 옵션이 아니라
 #    타깃 전체의 ABI 스위치다. 이 플래그가 켜지면 컴파일러가 전역 데이터를
@@ -18,7 +18,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $Root     = $PSScriptRoot
-$Compiler = Join-Path $Root 'compiler\ppcx64_pkg.exe'
+$Compiler = Join-Path $Root 'compiler\fcc64.exe'
 $RtlDir   = Join-Path $Root 'rtl'
 
 # FPC 배포본이 함께 싣는 GNU make 와 보조 도구(cp/mv/rm/gmkdir…). RTL Makefile 이 이것들을 쓴다.
@@ -34,18 +34,25 @@ if (-not (Test-Path (Join-Path $MakeDir 'make.exe'))) {
 
 $env:PATH = "$MakeDir;$env:PATH"
 
-$targets = if ($Clean) { @('clean', 'all') } else { @('all') }
+# ⚠️ [string[]] 를 명시해야 한다. if 식의 결과를 그냥 받으면 원소가 하나일 때
+#    배열이 아니라 문자열이 되고, @targets 스플래팅이 그것을 글자 단위로 쪼개
+#    make 에 'a' 'l' 'l' 을 넘긴다 (`No rule to make target 'a'`).
+[string[]]$targets = if ($Clean) { @('clean', 'all') } else { @('all') }
 
 Push-Location $RtlDir
 try {
     $sw = [Diagnostics.Stopwatch]::StartNew()
-    & make.exe @targets "PP=$Compiler" OS_TARGET=win64 CPU_TARGET=x86_64 2>&1 |
-        Select-String 'Error|Fatal|Warning' |
-        Select-Object -First 20
+    # ⚠️ 출력을 먼저 통째로 받은 뒤 거른다.
+    #    `make | Select-String | Select-Object -First N` 처럼 파이프라인에 두면
+    #    Select-Object 가 상류를 조기 종료시켜 make 가 죽고 $LASTEXITCODE 가
+    #    비영이 된다 — 실제로는 성공했는데 실패로 보고했다.
+    $makeOut = & make.exe @targets "PP=$Compiler" OS_TARGET=win64 CPU_TARGET=x86_64 2>&1
+    $makeExit = $LASTEXITCODE
+    $makeOut | Select-String 'Error|Fatal|Warning' | Select-Object -First 20
     $sw.Stop()
 
-    if ($LASTEXITCODE -ne 0) {
-        throw "RTL 빌드 실패 (exit $LASTEXITCODE)"
+    if ($makeExit -ne 0) {
+        throw "RTL 빌드 실패 (exit $makeExit)"
     }
 
     $units = Get-ChildItem (Join-Path $RtlDir 'units\x86_64-win64\*.ppu')

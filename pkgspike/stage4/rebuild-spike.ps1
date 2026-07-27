@@ -1,4 +1,4 @@
-# stage4 재빌드 - 런타임/디자인타임 패키지 검증 트리.
+﻿# stage4 재빌드 - 런타임/디자인타임 패키지 검증 트리.
 #
 # stage3rt/rebuild-spike.ps1 과 같은 이유로 존재한다: 툴체인이 바뀌면
 # 전부 다시 지어야 하는데 순서와 플래그를 기억에만 두면 틀린다.
@@ -7,7 +7,7 @@
 # 컴파일이 실패하는 것이 정상이다. Host1 도 마찬가지로 링크되면 안 되는 쪽이다.
 
 param(
-  [string]$Ppc = 'C:\works\fpc-unleashed\compiler\ppcx64_pkg.exe',
+  [string]$Ppc = 'C:\works\fpc-unleashed\compiler\fcc64.exe',
   [string]$ResDir = 'C:\fpcunleashed\fpc322\bin\i386-win32'
 )
 

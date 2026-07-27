@@ -1,7 +1,7 @@
-# Win64 동적 패키지 작업용 컴파일러 빌드 스크립트.
+﻿# Win64 동적 패키지 작업용 컴파일러 빌드 스크립트.
 #
 # 부트스트랩 컴파일러(설치본 ppcx64)로 이 저장소의 컴파일러를 빌드한다.
-# 산출물: compiler\ppcx64_pkg.exe
+# 산출물: compiler\fcc64.exe
 #
 #   .\build-ppc.ps1            # 빌드
 #   .\build-ppc.ps1 -Clean     # 산출물 지우고 빌드
@@ -18,7 +18,7 @@ $ErrorActionPreference = 'Stop'
 $Bootstrap = 'C:\fpcunleashed\fpc\bin\x86_64-win64\ppcx64.exe'
 $Root      = $PSScriptRoot
 $Compiler  = Join-Path $Root 'compiler'
-$Output    = Join-Path $Compiler 'ppcx64_pkg.exe'
+$Output    = Join-Path $Compiler 'fcc64.exe'
 
 if (-not (Test-Path $Bootstrap)) {
     throw "부트스트랩 컴파일러를 찾을 수 없습니다: $Bootstrap"
@@ -64,7 +64,7 @@ try {
         '-dx86_64', '-dGDB',
         '-Fux86_64', '-Fux86', '-Fusystems',
         '-Fix86_64', '-Fix86', '-Fisystems', '-Fimsg',
-        '-FE.', '-oppcx64_pkg'
+        '-FE.', '-ofcc64'
     )
 
     if ($Debug) {
@@ -81,8 +81,8 @@ try {
     $sw.Stop()
 
     # -o 가 확장자를 떼므로 되돌린다
-    if (Test-Path (Join-Path $Compiler 'ppcx64_pkg')) {
-        Move-Item (Join-Path $Compiler 'ppcx64_pkg') $Output -Force
+    if (Test-Path (Join-Path $Compiler 'fcc64')) {
+        Move-Item (Join-Path $Compiler 'fcc64') $Output -Force
     }
 
     if (-not (Test-Path $Output)) {

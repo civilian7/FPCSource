@@ -1,4 +1,4 @@
-# 스파이크 트리 전체 재빌드.
+﻿# 스파이크 트리 전체 재빌드.
 #
 # 툴체인이 바뀌면(확장자·.fcp 형식·ABI 플래그) 이 트리 전체가 무효가 된다.
 # 순서와 플래그를 기억에만 두면 틀린다 - 실제로 stage4 바이너리가 RTL 보다
@@ -9,7 +9,7 @@
 # 그 둘을 호출한다.
 
 param(
-  [string]$Ppc = 'C:\works\fpc-unleashed\compiler\ppcx64_pkg.exe',
+  [string]$Ppc = 'C:\works\fpc-unleashed\compiler\fcc64.exe',
   [string]$ResDir = 'C:\fpcunleashed\fpc322\bin\i386-win32',
   [switch]$CleanStale
 )

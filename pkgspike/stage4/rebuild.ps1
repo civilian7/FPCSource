@@ -1,4 +1,4 @@
-# stage4 재현 케이스 전체 재빌드 + 회귀 실행.
+﻿# stage4 재현 케이스 전체 재빌드 + 회귀 실행.
 #
 # stage4 는 두 종류의 픽스처를 담는다:
 #   ① 컴파일러↔호스트 이음매 — DirOk/DirBad/DirRun/RunPkg/Host1.
@@ -23,7 +23,7 @@
 # 종료 코드 0 = 전부 기대대로, 1 = 하나라도 어긋남.
 
 param(
-  [string]$Ppc = 'C:\works\fpc-unleashed\compiler\ppcx64_pkg.exe'
+  [string]$Ppc = 'C:\works\fpc-unleashed\compiler\fcc64.exe'
 )
 
 $ErrorActionPreference = 'Stop'

@@ -1,4 +1,4 @@
-# stage3rt 재현 케이스 전체 재빌드.
+﻿# stage3rt 재현 케이스 전체 재빌드.
 #
 # 컴파일러를 고칠 때마다 필요하다. 특히 .pcp 형식이 바뀌면 옛 .pcp 는
 # "Error reading PCP-File" 로 거부되므로 패키지를 전부 다시 지어야 한다.
@@ -16,7 +16,7 @@
 #   .\rebuild.ps1
 
 param(
-  [string]$Ppc = 'C:\works\fpc-unleashed\compiler\ppcx64_pkg.exe'
+  [string]$Ppc = 'C:\works\fpc-unleashed\compiler\fcc64.exe'
 )
 
 $ErrorActionPreference = 'Stop'

@@ -1,4 +1,4 @@
-# stage3rt 재빌드 - 지금까지 손으로 하던 것을 스크립트로.
+﻿# stage3rt 재빌드 - 지금까지 손으로 하던 것을 스크립트로.
 #
 # 확장자 변경(.dll/.pcp -> .fpl/.fcp)처럼 툴체인이 바뀌면 이 트리 전체를
 # 다시 지어야 하는데, 순서를 기억에만 두면 매번 틀린다. 실제로 stage4
@@ -8,7 +8,7 @@
 # contained 유닛을 -FP 와 함께 컴파일하면 IE 2013053103 으로 죽는다.
 
 param(
-  [string]$Ppc = 'C:\works\fpc-unleashed\compiler\ppcx64_pkg.exe',
+  [string]$Ppc = 'C:\works\fpc-unleashed\compiler\fcc64.exe',
   [string]$ResDir = 'C:\fpcunleashed\fpc322\bin\i386-win32'
 )
 
