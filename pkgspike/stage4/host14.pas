@@ -94,13 +94,13 @@ var
   GReg: HMODULE;
   GReg2: HMODULE;
 begin
-  GReg := LoadPackage('RegPkg.dll');
-  GReg2 := LoadPackage('Reg2Pkg.dll');
+  GReg := LoadPackage('RegPkg.fpl');
+  GReg2 := LoadPackage('Reg2Pkg.fpl');
   CallRegisterProcs(GReg);
   CallRegisterProcs(GReg2);
 
   WriteLn('== 둘 다 로드, 등록 후 ==');
-  Expect('BasePkg 매핑', IsMapped('BasePkg.dll'), True);
+  Expect('BasePkg 매핑', IsMapped('BasePkg.fpl'), True);
   Expect('TBaseThing', Assigned(GetClass('TBaseThing')), True);
   Expect('TRegDemo', Assigned(GetClass('TRegDemo')), True);
   Expect('TReg2Demo', Assigned(GetClass('TReg2Demo')), True);
@@ -110,7 +110,7 @@ begin
     것이 옳다면 TBaseThing 은 반드시 살아남는다. }
   UnloadPackage(GReg);
   WriteLn('== RegPkg 만 언로드 (Reg2Pkg 가 BasePkg 를 아직 참조) ==');
-  Expect('BasePkg 매핑', IsMapped('BasePkg.dll'), True);
+  Expect('BasePkg 매핑', IsMapped('BasePkg.fpl'), True);
   Expect('TRegDemo (RegPkg 소유, 치워져야)', Assigned(GetClass('TRegDemo')), False);
   Expect('TBaseThing (살아남아야 - 핵심 가드)', Assigned(GetClass('TBaseThing')), True);
   Expect('TReg2Demo (Reg2Pkg 살아있음)', Assigned(GetClass('TReg2Demo')), True);
@@ -119,7 +119,7 @@ begin
     치워져야 한다 - 안 치우면 다음 GetClass 가 죽는다. }
   UnloadPackage(GReg2);
   WriteLn('== Reg2Pkg 도 언로드 (BasePkg 참조수 0) ==');
-  Expect('BasePkg 매핑', IsMapped('BasePkg.dll'), False);
+  Expect('BasePkg 매핑', IsMapped('BasePkg.fpl'), False);
   Expect('TReg2Demo (Reg2Pkg 소유, 치워져야)', Assigned(GetClass('TReg2Demo')), False);
   Expect('TBaseThing (의존 언매핑, 치워져야)', Assigned(GetClass('TBaseThing')), False);
   Expect('TPersistent (rtlpkg 는 핀 고정)', Assigned(GetClass('TPersistent')), True);

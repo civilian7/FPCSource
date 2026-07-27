@@ -115,13 +115,13 @@ var
   GLib: HMODULE;
   GCount: PtrUInt;
 begin
-  Expect('로드 전 BasePkg 매핑', IsMapped('BasePkg.dll'), False);
+  Expect('로드 전 BasePkg 매핑', IsMapped('BasePkg.fpl'), False);
 
   { LoadPackage 는 실패하면 EPackageError 를 던진다. 돌아왔다는 사실
     자체가 성공이므로 핸들을 0 과 비교해봐야 항상 참이다 - 대신
     의존 패키지가 함께 매핑됐는지를 본다. }
-  GLib := LoadPackage('RegPkg.dll');
-  Expect('로드 후 BasePkg 매핑 (의존으로 매핑)', IsMapped('BasePkg.dll'), True);
+  GLib := LoadPackage('RegPkg.fpl');
+  Expect('로드 후 BasePkg 매핑 (의존으로 매핑)', IsMapped('BasePkg.fpl'), True);
 
   GCount := CallRegisterProcs(GLib);
   { RegUnit + RegUnit2 만. BaseRegUnit 은 required 패키지(BasePkg) 소속이라
@@ -136,7 +136,7 @@ begin
   Expect('등록 후 TBaseThing (조상 체인 등록)', Assigned(GetClass('TBaseThing')), True);
 
   UnloadPackage(GLib);
-  Expect('언로드 후 BasePkg 매핑 (통지 없이 언매핑)', IsMapped('BasePkg.dll'), False);
+  Expect('언로드 후 BasePkg 매핑 (통지 없이 언매핑)', IsMapped('BasePkg.fpl'), False);
 
   { 여기서부터가 문제 구간이다. 수정 전이라면 아래 GetClass 가
     언매핑된 이미지의 VMT 를 읽고 죽는다. }

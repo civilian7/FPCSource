@@ -120,7 +120,9 @@ unit i_win;
             scriptext    : '.bat';
             smartext     : '.sl';
             unitext      : '.ppu';
-            unitlibext   : '.ppl';
+            { Package libraries use a dedicated extension so that they can be
+              told apart from plain DLLs when scanning a directory. }
+            unitlibext   : '.fpl';
             asmext       : '.s';
             objext       : '.o';
             resext       : '.res';

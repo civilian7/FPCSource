@@ -77,7 +77,7 @@ var
 begin
   WriteLn('로드 전 GetClass : ', Assigned(GetClass('TSalesPlugin')));
 
-  GLib := LoadPackage('SalesPkg.dll');
+  GLib := LoadPackage('SalesPkg.fpl');
   WriteLn('LoadPackage      : ', GLib <> 0);
   if GLib = 0 then
   begin

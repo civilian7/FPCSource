@@ -2152,6 +2152,12 @@ type
 
          curr.setmodulename(module_name);
          curr.ispackage:=true;
+         { A package library gets its own extension so that it can be told apart
+           from a plain DLL without opening it and reading PACKAGEFLAGS. The base
+           name was already derived by setfilename() in the constructor, where
+           ispackage was not known yet, so only the extension is swapped here. }
+         if target_info.unitlibext<>'' then
+           curr.sharedlibfilename:=ChangeFileExt(curr.sharedlibfilename,target_info.unitlibext);
          exportlib.preparelib(module_name);
          pkg:=tpcppackage.create(module_name);
 
@@ -3184,6 +3190,7 @@ type
          feature : tfeature;
          load_ok : boolean;
          pentry : ppackageentry;
+         required_name : string;
 
       begin
          result:=true;
@@ -3251,6 +3258,48 @@ type
 {$ifdef DEBUG_NODE_XML}
              XMLInitializeNodeFile('program', curr.realmodulename^);
 {$endif DEBUG_NODE_XML}
+           end;
+
+         { A program may declare the packages it links against with the same
+           `requires` clause a package uses, instead of the -FP command line
+           switch. The clause sits between the program header and the first
+           `uses`, so the semicolon closing the header has to be consumed here
+           rather than further down, after the system unit has been loaded.
+           This has to happen before load_packages, otherwise the packages
+           named here are never loaded. }
+         if consume_semicolon_after_loaded and
+            (current_scanner.token=_SEMICOLON) then
+           begin
+             consume(_SEMICOLON);
+             consume_semicolon_after_loaded:=false;
+
+             if (current_scanner.token=_ID) and (current_scanner.idtoken=_REQUIRES) then
+               begin
+                 { consume _REQUIRES word }
+                 consume(_ID);
+                 while true do
+                   begin
+                     if current_scanner.token=_ID then
+                       begin
+                         required_name:=current_scanner.orgpattern;
+                         consume(_ID);
+                         while current_scanner.token=_POINT do
+                           begin
+                             consume(_POINT);
+                             required_name:=required_name+'.'+current_scanner.orgpattern;
+                             consume(_ID);
+                           end;
+                         add_package(required_name,false,true);
+                       end
+                     else
+                       consume(_ID);
+                     if current_scanner.token=_COMMA then
+                       consume(_COMMA)
+                     else
+                       break;
+                   end;
+                 consume(_SEMICOLON);
+               end;
            end;
 
          { load all packages, so we know whether a unit is contained inside a

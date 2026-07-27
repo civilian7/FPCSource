@@ -52,9 +52,9 @@ end;
 procedure DumpModules(const ATag: string);
 begin
   WriteLn('== ', ATag, ' ==');
-  WriteLn('    rtlpkg    handle = ', IntToHex(GetModuleHandle('rtlpkg.dll'), 1));
-  WriteLn('    CommonPkg handle = ', IntToHex(GetModuleHandle('CommonPkg.dll'), 1));
-  WriteLn('    SalesPkg  handle = ', IntToHex(GetModuleHandle('SalesPkg.dll'), 1));
+  WriteLn('    rtlpkg    handle = ', IntToHex(GetModuleHandle('rtlpkg.fpl'), 1));
+  WriteLn('    CommonPkg handle = ', IntToHex(GetModuleHandle('CommonPkg.fpl'), 1));
+  WriteLn('    SalesPkg  handle = ', IntToHex(GetModuleHandle('SalesPkg.fpl'), 1));
 end;
 
 var
@@ -66,7 +66,7 @@ var
 begin
   DumpModules('로드 전');
 
-  GLib := LoadLibrary('SalesPkg.dll');
+  GLib := LoadLibrary('SalesPkg.fpl');
   GTable := PInitFinalTable(GetProcAddress(GLib, 'INITFINAL'));
   for I := 1 to GTable^.TableCount do
   begin

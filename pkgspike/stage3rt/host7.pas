@@ -27,7 +27,7 @@ var
   GCls: TPersistentClass;
   GObj: TPersistent;
 begin
-  GLib := LoadLibrary('PlainPkg.dll');
+  GLib := LoadLibrary('PlainPkg.fpl');
   WriteLn('load    : ', GLib <> 0);
 
   GTable := PInitFinalTable(GetProcAddress(GLib, 'INITFINAL'));

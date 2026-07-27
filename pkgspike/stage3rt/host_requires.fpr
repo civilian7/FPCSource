@@ -1,0 +1,32 @@
+program host13;
+
+{ Task 0 Step 8 - a program declaring its packages in source instead of -FP.
+
+  Expected: the same rtlpkg.fpl instance the -FP route produces, i.e.
+  GetModuleHandle('rtlpkg.fpl') is non-zero because the loader mapped it
+  as a load-time dependency. }
+
+{$mode delphi}
+
+requires
+  rtlpkg;
+
+uses
+  Windows,
+  SysUtils,
+  Classes;
+
+var
+  GMod: HMODULE;
+begin
+  GMod := GetModuleHandle('rtlpkg.fpl');
+  WriteLn('rtlpkg.fpl 로드됨 : ', GMod <> 0);
+  WriteLn('TPersistent 등록  : ', Assigned(GetClass('TPersistent')));
+  if GMod = 0 then
+  begin
+    WriteLn('host13 FAILED - 패키지가 매핑되지 않았다');
+    Halt(1);
+  end;
+
+  WriteLn('host13 ok');
+end.

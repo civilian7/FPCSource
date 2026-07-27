@@ -44,10 +44,10 @@ var
   I: PtrUInt;
 begin
   { CommonPkg 를 명시적으로 핀 - FreeLibrary(SalesPkg) 가 언맵하지 못하게 }
-  GPin := LoadLibrary('CommonPkg.dll');
+  GPin := LoadLibrary('CommonPkg.fpl');
   WriteLn('CommonPkg pinned : ', GPin <> 0);
 
-  GLib := LoadLibrary('SalesPkg.dll');
+  GLib := LoadLibrary('SalesPkg.fpl');
   GTable := PInitFinalTable(GetProcAddress(GLib, 'INITFINAL'));
   for I := 1 to GTable^.TableCount do
   begin

@@ -175,7 +175,7 @@ implementation
         singlepathstring:=FixPath(s,false);
         { Check for package file }
         { TODO }
-        found:=package_exists({target_info.pkginfoext}'.pcp',hs);
+        found:=package_exists({target_info.pkginfoext}'.fcp',hs);
         if found then
           begin
             setfilename(hs,false);
@@ -233,7 +233,7 @@ implementation
         else
           if (OutputExeDir<>'') then
             p:=OutputExeDir;
-      pcpfilename:=p+n+{target_info.pkginfoext}'.pcp';
+      pcpfilename:=p+n+{target_info.pkginfoext}'.fcp';
     end;
 
   procedure tpcppackage.writecontainernames;

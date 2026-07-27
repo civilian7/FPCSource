@@ -66,7 +66,7 @@ var
 begin
   DumpClasses('로드 전');
 
-  GLib := LoadLibrary('SalesPkg.dll');
+  GLib := LoadLibrary('SalesPkg.fpl');
   GTable := PInitFinalTable(GetProcAddress(GLib, 'INITFINAL'));
   for I := 1 to GTable^.TableCount do
   begin

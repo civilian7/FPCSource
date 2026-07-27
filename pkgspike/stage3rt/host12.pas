@@ -73,7 +73,7 @@ begin
   WriteLn('로드 전 GetClass  : ', GLazy);
   Require('로드 전 TLazyPlugin', GLazy, False);
 
-  GLib := LoadPackage('LazyPkg.dll');
+  GLib := LoadPackage('LazyPkg.fpl');
   WriteLn('LoadPackage       : ', GLib <> 0);
 
   RunPlugin;
@@ -88,7 +88,7 @@ begin
   Require('언로드 후 TPersistent (과잉 제거)', GPersist, True);
 
   { 두 번째 사이클 - 재로드가 멀쩡한지 }
-  GLib := LoadPackage('LazyPkg.dll');
+  GLib := LoadPackage('LazyPkg.fpl');
   GLazy := Assigned(GetClass('TLazyPlugin'));
   WriteLn('재로드 GetClass   : ', GLazy);
   Require('재로드 TLazyPlugin', GLazy, True);
