@@ -1,4 +1,4 @@
-{
+﻿{
     Copyright (c) 1998-2002 by Florian Klaempfl
 
     This unit implements the first loading and searching of the modules
@@ -807,11 +807,17 @@ var
                 package:=pkg^.package;
                 Message2(unit_u_loading_from_package,modulename^,pkg^.package.packagename^);
 
-                { now load the unit and all used units }
+                { Follow the same protocol as try_load_ppufile: mark the module
+                  as loading and only pull in the interface here. Driving
+                  load_usedunits is continueloadppu's job -- it knows how to
+                  defer to the ctask scheduler (store_state, stay at ms_load)
+                  when a used unit answers "not ready yet". The previous code
+                  called load_usedunits inline and treated that answer as an
+                  internal error (2026020415), which made any package unit
+                  with not-yet-loaded dependencies fatal. }
+                state:=ms_load;
+                fromppu:=true;
                 load_interface;
-                if not load_usedunits then
-                  internalerror(2026020415);
-                Message1(unit_u_finished_loading_unit,modulename^);
 
                 result:=true;
                 break;
@@ -2407,14 +2413,20 @@ var
         if Result then
           begin
             do_reload:=false;
-            state:=ms_compiled;
-            { PPU is not needed anymore }
-            if assigned(ppufile) then
-             begin
-               discardppu;
-             end;
-            { add the unit to the used units list of the program }
+
+            { add the unit to the used units list of the program.
+              Do this before continueloadppu: the unit belongs to the package
+              whether or not its dependencies are ready yet, and this routine
+              runs only once per module (loadppu handles ms_registered only;
+              resumption goes straight to continueloadppu). }
             usedunits.concat(tused_unit.create(self,true,false,nil));
+
+            { Drive load_usedunits through the standard machinery. On success
+              load_usedunits itself advances the state to ms_compiled and
+              continueloadppu discards the ppu stream; on "dependency not
+              ready" it stores the global state and leaves the module at
+              ms_load for the scheduler to resume. }
+            continueloadppu;
           end;
       end;
 
