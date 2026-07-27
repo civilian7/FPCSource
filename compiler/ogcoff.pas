@@ -1,4 +1,4 @@
-﻿{
+{
     Copyright (c) 1998-2006 by Peter Vreman
 
     Contains the binary coff/PE reader and writer

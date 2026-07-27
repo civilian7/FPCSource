@@ -1,4 +1,4 @@
-﻿{
+{
     Copyright (c) 1998-2008 by Peter Vreman
 
     This unit implements support information structures for win32

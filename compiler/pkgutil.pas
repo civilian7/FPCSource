@@ -1,4 +1,4 @@
-﻿{
+{
     Copyright (c) 2013-2016 by Free Pascal Development Team
 
     This unit implements basic parts of the package system

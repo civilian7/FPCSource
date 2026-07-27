@@ -1,4 +1,4 @@
-﻿{
+{
     Copyright (c) 1998-2002 by Florian Klaempfl, Pierre Muller
 
     Implementation for the symbols types of the symtable

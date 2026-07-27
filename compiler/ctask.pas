@@ -1,4 +1,4 @@
-﻿{
+{
     Copyright (c) 2024- by Michael Van Canneyt
 
     This unit handles the compiler tasks.

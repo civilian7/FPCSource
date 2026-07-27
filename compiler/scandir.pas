@@ -1,4 +1,4 @@
-﻿{
+{
     Copyright (c) 1998-2002 by Peter Vreman
 
     This unit implements directive parsing for the scanner

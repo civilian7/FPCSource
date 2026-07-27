@@ -1,4 +1,4 @@
-﻿{
+{
     Symbol table implementation for the definitions
 
     Copyright (c) 1998-2005 by Florian Klaempfl, Pierre Muller

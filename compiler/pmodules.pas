@@ -1,4 +1,4 @@
-﻿{
+{
     Copyright (c) 1998-2008 by Florian Klaempfl
 
     Handles the parsing and loading of the modules (ppufiles)

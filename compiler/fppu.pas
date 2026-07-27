@@ -1,4 +1,4 @@
-﻿{
+{
     Copyright (c) 1998-2002 by Florian Klaempfl
 
     This unit implements the first loading and searching of the modules
