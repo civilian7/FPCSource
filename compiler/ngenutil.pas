@@ -43,6 +43,13 @@ interface
     end;
     pinitfinalentry = ^tinitfinalentry;
 
+    { one contained unit that publishes a design-time Register procedure }
+    tregprocentry = record
+      module : tmodule;
+      regpd  : tprocdef;
+    end;
+    pregprocentry = ^tregprocentry;
+
     tnodeutils = class
       class function call_fail_node:tnode; virtual;
       class function initialize_data_node(p:tnode; force: boolean):tnode; virtual;
@@ -115,6 +122,7 @@ interface
       class function create_main_procdef(const name: string; potype:tproctypeoption; ps: tprocsym):tdef; virtual;
       class procedure InsertInitFinalTable(main : tmodule);
       class procedure InsertPackageFlags(main : tmodule);
+      class procedure InsertRegProcsTable(main : tmodule);
      protected
       class procedure InsertRuntimeInits(const prefix:string;list:TLinkedList;unitflag:tmoduleflag); virtual;
       class procedure InsertRuntimeInitsTablesTable(const prefix,tablename:string;unitflag:tmoduleflag); virtual;
@@ -123,6 +131,8 @@ interface
 
       class function get_init_final_list(main : tmodule): tfplist;
       class procedure release_init_final_list(list:tfplist);
+
+      class function get_register_proc_list(main : tmodule): tfplist;
      public
       class procedure InsertThreadvarTablesTable; virtual;
       class procedure InsertThreadvars; virtual;
@@ -1191,6 +1201,77 @@ implementation
     end;
 
 
+  class function tnodeutils.get_register_proc_list(main : tmodule):tfplist;
+
+    { A design-time unit publishes its registrations through a parameterless
+      procedure named Register, exactly as in Delphi. }
+    function find_register(m : tmodule):tprocdef;
+      var
+        sym : tsymentry;
+        ps : tprocsym;
+        pd : tprocdef;
+        j : longint;
+      begin
+        result:=nil;
+        if not assigned(m.globalsymtable) then
+          exit;
+        sym:=tsymentry(m.globalsymtable.Find('REGISTER'));
+        if not assigned(sym) or (sym.typ<>procsym) then
+          exit;
+        ps:=tprocsym(sym);
+        for j:=0 to ps.procdeflist.count-1 do
+          begin
+            pd:=tprocdef(ps.procdeflist[j]);
+            if (pd.returndef=voidtype) and
+               assigned(pd.paras) and
+               (pd.paras.count=0) then
+              begin
+                result:=pd;
+                exit;
+              end;
+          end;
+      end;
+
+    procedure addusedunits(m : tmodule; list : tfplist);
+      var
+        hp : tused_unit;
+        entry : pregprocentry;
+        pd : tprocdef;
+      begin
+        hp:=tused_unit(m.used_units.first);
+        while assigned(hp) do
+          begin
+            { units of a required package are that package's business }
+            if current_module.ispackage and
+               assigned(hp.u.package) and
+               (hp.u.package<>current_module.package) then
+              begin
+                hp:=tused_unit(hp.next);
+                continue;
+              end;
+            if not hp.u.regprocchecked then
+              begin
+                hp.u.regprocchecked:=true;
+                addusedunits(hp.u,list);
+                pd:=find_register(hp.u);
+                if assigned(pd) then
+                  begin
+                    new(entry);
+                    entry^.module:=hp.u;
+                    entry^.regpd:=pd;
+                    list.add(entry);
+                  end;
+              end;
+            hp:=tused_unit(hp.next);
+          end;
+      end;
+
+    begin
+      result:=tfplist.create;
+      addusedunits(main,result);
+    end;
+
+
   class procedure tnodeutils.InsertInitFinalTable(main : tmodule);
     var
       entries : tfplist;
@@ -1366,6 +1447,59 @@ implementation
       );
 
       tcb.free;
+    end;
+
+
+  class procedure tnodeutils.InsertRegProcsTable(main : tmodule);
+    var
+      entries : tfplist;
+      tcb : ttai_typedconstbuilder;
+      tabledef : tdef;
+      entry : pregprocentry;
+      namelbl : tasmlabel;
+      nametcb : ttai_typedconstbuilder;
+      namedef : tdef;
+      i : longint;
+    begin
+      entries:=get_register_proc_list(main);
+
+      tcb:=ctai_typedconstbuilder.create([tcalo_make_dead_strippable,tcalo_new_section]);
+      tcb.begin_anonymous_record('',default_settings.packrecords,sizeof(pint),
+        targetinfos[target_info.system]^.alignment.recordalignmin);
+
+      { tablecount }
+      tcb.emit_ord_const(entries.count,aluuinttype);
+
+      for i:=0 to entries.count-1 do
+        begin
+          entry:=pregprocentry(entries[i]);
+          tcb.emit_procdef_const(entry^.regpd);
+          { Register lives in another module, often in another package: without
+            this the symbol never reaches the image's import table and the
+            package fails to link or to load. }
+          if entry^.module<>current_module then
+            current_module.addimportedsym(entry^.regpd.procsym);
+
+          { Add pointer to unit name }
+          tcb.start_internal_data_builder(current_asmdata.asmlists[al_globals],sec_rodata,'',nametcb,namelbl);
+          namedef:=nametcb.emit_shortstring_const(rtti_string(entry^.module.realmodulename^));
+          tcb.finish_internal_data_builder(nametcb,namelbl,namedef,sizeof(pint));
+          tcb.queue_init(charpointertype);
+          tcb.queue_emit_asmsym(namelbl,namedef);
+        end;
+
+      { Add to data segment }
+      tabledef:=tcb.end_anonymous_record;
+      current_asmdata.asmlists[al_globals].concatlist(
+        tcb.get_final_asmlist(
+          current_asmdata.DefineAsmSymbol('REGPROCS',AB_GLOBAL,AT_DATA,tabledef),
+          tabledef,
+          sec_data,'REGPROCS',const_align(sizeof(pint))
+        )
+      );
+
+      tcb.free;
+      TFPList.FreeAndNilDisposing(entries,typeinfo(tregprocentry));
     end;
 
 

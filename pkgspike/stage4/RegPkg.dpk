@@ -1,0 +1,13 @@
+package RegPkg;
+
+{$mode delphi}
+{$DESIGNONLY}
+{$IMPLICITBUILD OFF}
+
+requires
+  rtlpkg;
+
+contains
+  RegUnit;
+
+end.

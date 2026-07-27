@@ -34,6 +34,7 @@ interface
   procedure export_unit(u:tmodule);
   procedure export_package_initfinal;
   procedure export_package_packageflags;
+  procedure export_package_regprocs;
   procedure load_packages;
   procedure add_package(const name:string;ignoreduplicates:boolean;direct:boolean);
   procedure add_package_unit_ref(package:tpackage);
@@ -334,6 +335,26 @@ implementation
 
         Both clear means either use, which is Delphi's default. }
       varexport('PACKAGEFLAGS');
+    end;
+
+
+  procedure export_package_regprocs;
+    begin
+      { Emitted by tnodeutils.InsertRegProcsTable as the asm symbol REGPROCS.
+        An IDE calls these at *install* time, never at link or load time --
+        that is Delphi's contract, and it is why a run-time program never
+        pays for the palette. The layout is
+
+          TableCount : PtrUInt
+          Procs      : array[1..TableCount] of record
+                         Proc     : procedure;
+                         UnitName : ^ShortString;
+                       end;
+
+        Not emitted at all for a RUNONLY package, so the absence of this
+        export means "nothing here is installable", which is different from
+        an export whose TableCount happens to be 0. }
+      varexport('REGPROCS');
     end;
 
   Function RewritePPU(const PPUFn:String;OutStream:TCStream):Boolean;

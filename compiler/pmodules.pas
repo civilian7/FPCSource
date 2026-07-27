@@ -2385,9 +2385,17 @@ type
            well-known name PACKAGE_INITFINAL for the loader to walk. }
          cnodeutils.InsertInitFinalTable(curr);
          cnodeutils.InsertPackageFlags(curr);
+         { The design-time registration table. A RUNONLY package is by
+           definition not installable, so it gets none; a package with no kind
+           directive does get one, because "either use" is Delphi's default
+           and such a package can be installed. }
+         if not curr.package_runonly then
+           cnodeutils.InsertRegProcsTable(curr);
          exportlib.ignoreduplicates:=true;
          pkgutil.export_package_initfinal;
          pkgutil.export_package_packageflags;
+         if not curr.package_runonly then
+           pkgutil.export_package_regprocs;
          exportlib.ignoreduplicates:=false;
 
          if target_info.system in systems_all_windows+systems_nativent then

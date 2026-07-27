@@ -276,6 +276,11 @@ interface
         compilecount : integer;
         consume_semicolon_after_uses : Boolean;
         initfinalchecked : boolean;
+        { Separate marker for the Register-procedure walk. It must not share
+          initfinalchecked: by the time the registration table is collected,
+          InsertInitFinalTable has already set that flag on every module, so
+          reusing it would silently yield an empty table. }
+        regprocchecked : boolean;
         functypechecked : boolean;
 
         { contains a list of types that are extended by helper types; the key is
@@ -758,6 +763,8 @@ implementation
         moduleflags:=[];
         package_designonly:=false;
         package_runonly:=false;
+        initfinalchecked:=false;
+        regprocchecked:=false;
         scanner:=nil;
         unitmap:=nil;
         unitmapsize:=0;
@@ -1189,6 +1196,8 @@ implementation
         moduleflags:=[];
         package_designonly:=false;
         package_runonly:=false;
+        initfinalchecked:=false;
+        regprocchecked:=false;
         mainfilepos.line:=0;
         mainfilepos.column:=0;
         mainfilepos.fileindex:=0;
