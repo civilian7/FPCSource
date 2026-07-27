@@ -1474,9 +1474,9 @@ implementation
         begin
           entry:=pregprocentry(entries[i]);
           tcb.emit_procdef_const(entry^.regpd);
-          { Register lives in another module, often in another package: without
-            this the symbol never reaches the image's import table and the
-            package fails to link or to load. }
+          { a contained unit's Register is always same-image (the skip rule at
+            get_init_final_list removes any unit living in another DLL before
+            emission is reached). kept for symmetry with insert_init_final_table. }
           if entry^.module<>current_module then
             current_module.addimportedsym(entry^.regpd.procsym);
 
