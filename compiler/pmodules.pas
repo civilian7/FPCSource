@@ -2180,29 +2180,6 @@ type
          { of the program                                             }
          curr.localsymtable:=tstaticsymtable.create(curr.realmodulename^,curr.moduleid);
 
-         { load system unit -- must happen before anything creates defs, because
-           the intern types (uinttype, voidpointertype, bool32type, ...) live in
-           it. proc_program and proc_unit both do this right after creating the
-           local symtable; proc_package was missing it entirely, so the DLLMain
-           stub built by create_main_proc below dereferenced nil type defs. }
-         load_ok:=loadsystemunit(curr);
-
-         { system unit is loaded, now insert feature defines }
-         for feature:=low(tfeature) to high(tfeature) do
-           if feature in features then
-             def_system_macro('FPC_HAS_FEATURE_'+featurestr[feature]);
-
-         { load standard units, e.g. objpas }
-         if not(cs_compilesystem in current_settings.moduleswitches) then
-           load_ok:=loaddefaultunits(curr) and load_ok;
-
-         { TODO: proc_program/proc_unit set ms_compiling_wait here when load_ok
-           is false, so the ctask scheduler can finish the dependencies first.
-           proc_package does everything in one pass and has no such exit point
-           yet -- revisit once packages compile at all. }
-         if not load_ok then
-           Message1(parser_e_packages_not_supported,target_info.name);
-
          { ensure that no packages are picked up from the options }
          packagelist.clear;
 
@@ -2256,6 +2233,32 @@ type
              for feature:=low(tfeature) to high(tfeature) do
                if feature in features then
                  def_system_macro('FPC_HAS_FEATURE_'+featurestr[feature]);
+           end
+         else
+           begin
+             { No requires clause, so nothing provides system -- link it in the
+               way proc_program and proc_unit do. Without this the intern types
+               (uinttype, voidpointertype, bool32type, ...) stay nil and the
+               DLLMain stub built by create_main_proc dereferences them.
+
+               ⚠ This has to stay *after* load_packages. Loading system earlier
+               makes it a plain unit of this package, and a later `requires`
+               can no longer supply it -- the package then statically links the
+               whole RTL instead of importing it. }
+             load_ok:=loadsystemunit(curr);
+
+             for feature:=low(tfeature) to high(tfeature) do
+               if feature in features then
+                 def_system_macro('FPC_HAS_FEATURE_'+featurestr[feature]);
+
+             if not(cs_compilesystem in current_settings.moduleswitches) then
+               load_ok:=loaddefaultunits(curr) and load_ok;
+
+             { TODO: proc_program/proc_unit go to ms_compiling_wait here so ctask
+               can finish the dependencies first. proc_package runs in one pass
+               and has no such exit point yet. }
+             if not load_ok then
+               Message1(parser_e_packages_not_supported,target_info.name);
            end;
 
          { Load the units used by the program we compile. }
