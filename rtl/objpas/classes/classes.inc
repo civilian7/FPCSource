@@ -2877,6 +2877,10 @@ begin
   { on unix this maps to a simple rw synchronizer }
   GlobalNameSpace := TMultiReadExclusiveWriteSynchronizer.Create;
   RegisterInitComponentHandler(TComponent,@DefaultInitHandler);
+{$if defined(WIN32) or defined(WIN64)}
+  { keep the class registry free of classes living in unloaded packages }
+  AddModuleUnloadProc(@ModuleUnloadHandler);
+{$endif}
 end;
 
 procedure CommonCleanup;
@@ -2884,6 +2888,9 @@ var
   i: Integer;
   tmpentry: TThread.PThreadQueueEntry;
 begin
+{$if defined(WIN32) or defined(WIN64)}
+  RemoveModuleUnloadProc(@ModuleUnloadHandler);
+{$endif}
 {$ifdef FPC_HAS_FEATURE_THREADING}
   GlobalNameSpace.BeginWrite;
 {$endif}

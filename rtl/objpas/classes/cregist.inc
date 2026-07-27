@@ -95,8 +95,37 @@ end;
 
 
 procedure UnRegisterModuleClasses(Module: HMODULE);
+{$if defined(WIN32) or defined(WIN64)}
+var
+  i : Integer;
+  info : TMemoryBasicInformation;
+begin
+  { drop every class whose VMT lives inside the departing image.
+    RegisterClass registers the whole ancestor chain, so a package's
+    finalization (which typically unregisters only its own classes)
+    leaves ancestors behind; any of those belonging to the unloaded
+    module would dangle in the list. }
+  with ClassList.LockList do
+    try
+      for i:=Count-1 downto 0 do
+        if (VirtualQuery(Items[i],info,SizeOf(info))=SizeOf(info)) and
+           (HMODULE(info.AllocationBase)=Module) then
+          UnRegisterClass(TPersistentClass(Items[i]));
+    finally
+      ClassList.UnlockList;
+    end;
+end;
+{$else}
 begin
 end;
+{$endif}
+
+{$if defined(WIN32) or defined(WIN64)}
+procedure ModuleUnloadHandler(Module: HMODULE);
+begin
+  UnRegisterModuleClasses(Module);
+end;
+{$endif}
 
 function FindClass(const AClassName: string): TPersistentClass;
 
