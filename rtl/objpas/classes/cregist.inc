@@ -128,15 +128,20 @@ begin
     stayed behind. Memory that is no longer committed cannot belong to any
     live class, so such entries are safe to drop.
 
-    Note this only reclaims entries whose image is still unmapped when some
-    later unload runs the sweep. It does not bound growth across an
-    install/uninstall/reinstall cycle of the same package: the sweep runs
-    from the unload notification, i.e. before FreeLibrary, and a package
-    reloaded in between is normally mapped at its previous base again (these
-    images have a fixed image base, so the addresses coincide exactly), which
-    makes the leftovers indistinguishable from the live registrations. Fixing
-    that needs the registering module recorded per entry, which this list has
-    never carried. }
+    UnloadPackage runs this sweep twice: once from the unload notification
+    with the departing handle, and once more after FreeLibrary with 0. So a
+    dependency that FreeLibrary just unmapped is reclaimed at the unload that
+    caused it, not at some arbitrary later one.
+
+    What that still does not bound is an entry whose image the unload does
+    *not* unmap -- a required package another loaded package still holds, or
+    one pinned at load time. Such an entry passes both rounds legitimately,
+    and across an install/uninstall/reinstall cycle the package is mapped at
+    its previous base again (these images have a fixed image base, so the
+    addresses coincide exactly), which makes the leftover indistinguishable
+    from the live registration. The duplicate filters in RegisterComponents
+    and RegisterNoIcon absorb that case; doing better needs the registering
+    module recorded per entry, which this list has never carried. }
   Result:=(HMODULE(info.AllocationBase)=Module) or (info.State<>MEM_COMMIT);
 end;
 {$endif}
@@ -313,12 +318,22 @@ begin
 
   { Registering the same class on the same page twice is meaningless, so skip
     duplicates. This is not just tidiness: it is what keeps the list from
-    growing across install/uninstall/reinstall of a package. UnRegisterModule-
-    Components runs from the unload notification, i.e. before FreeLibrary, so
-    entries whose image is only unmapped afterwards as a dependency survive
-    the sweep. A package reloaded later is normally mapped at its previous
-    base again, which makes the class pointers it registers *equal* to those
-    leftovers -- so filtering by value merges them instead of accumulating. }
+    growing across install/uninstall/reinstall of a package. UnloadPackage
+    sweeps twice -- before FreeLibrary with the departing handle, after it
+    with 0 -- so a dependency that the unload unmapped *is* reclaimed. What
+    no sweep may reclaim is an entry whose image is still mapped afterwards:
+    a design-time package D requiring a runtime package R that is pinned at
+    load time (or held by another loaded package) registers R-owned classes
+    here, and unloading D must leave them behind, because R is alive and
+    committed and neither the ownership nor the staleness test may touch it.
+    Reinstalling D maps it at its previous base again, which makes the class
+    pointers it registers *equal* to those leftovers -- so filtering by value
+    merges them instead of accumulating.
+
+    The filtering stops at this list: RegisterComponentsProc below still gets
+    the caller's full, unfiltered array. That is deliberate -- this list is
+    private to the RTL with no exported reader, so it has no business deciding
+    what an IDE sees, and the host keeps its own exact list. }
   for i := Low(ComponentClasses) to High(ComponentClasses) do
     if pg.Classes.IndexOf(ComponentClasses[i]) < 0 then
       pg.Classes.Add(ComponentClasses[i]);
@@ -340,9 +355,12 @@ begin
   if pg.Classes = nil then
     pg.Classes := TList.Create;
 
-  { skip duplicates for the same reason as in RegisterComponents above; page 0
-    needs it more, since the unload sweep never frees this page even when it
-    empties, so leftovers here are only ever merged away, never dropped }
+  { skip duplicates for the same reason as in RegisterComponents above, and
+    RegisterNoIconProc below likewise still gets the caller's full, unfiltered
+    array. What is exempt on page 0 is the page object itself: the sweep does
+    remove individual stale entries here just like on any other page, but it
+    never frees this one even when it empties, because RegisterNoIcon reaches
+    it by position (index 0). }
   for i := Low(ComponentClasses) to High(ComponentClasses) do
     if pg.Classes.IndexOf(ComponentClasses[i]) < 0 then
       pg.Classes.Add(ComponentClasses[i]);

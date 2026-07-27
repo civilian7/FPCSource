@@ -115,7 +115,15 @@ function GetFileVersion(const AFileName: UnicodeString): Cardinal;
   literals included -- outlive the image. Packages shared between the host
   and other packages must be pinned (linked at load time or loaded
   explicitly), otherwise FreeLibrary unmaps them together with the last
-  dynamic referrer. }
+  dynamic referrer.
+
+  One consequence of the second notification is worth spelling out: a package
+  that calls AddModuleUnloadProc and forgets the matching RemoveModuleUnloadProc
+  in its finalization now dies immediately, because that round jumps through
+  the leftover code pointer *after* FreeLibrary has unmapped it. The same
+  package used to survive its own unload and fault at the next one instead.
+  Dying at the violation is the better behaviour, but it is a real change for
+  code that was getting away with the bug. }
 
 type
   TModuleUnloadProc = procedure(Module: HMODULE);
@@ -300,11 +308,15 @@ procedure UnloadPackage(Module: HMODULE);
       package it requires, and GetClass dereferences those entries (ClassNameIs
       reads the VMT).
 
-      Passing 0 makes every subscriber's ownership test fail, so only the
-      staleness check runs. That cannot select a live class -- one always sits
-      in a mapped, committed image -- and a dependency still referenced by
-      another loaded package stays mapped and survives. Subscribers that only
-      compare against the passed handle are simply a no-op here.
+      Handle 0 belongs to no loaded image, so no ownership test can select a
+      live class and effectively only the staleness check decides. (On a
+      region that is already free VirtualQuery leaves AllocationBase
+      undefined -- 0 in practice -- so an ownership test may happen to match
+      there as well, but that is precisely the memory the staleness check
+      drops anyway.) A live class always sits in a mapped, committed image,
+      and a dependency another loaded package still references stays mapped,
+      so both survive. Subscribers that only compare against the passed
+      handle are simply a no-op here.
 
       Deliberate deviation: Delphi's UnloadPackage notifies only before
       FreeLibrary. This fork accepts the difference because it exists to
