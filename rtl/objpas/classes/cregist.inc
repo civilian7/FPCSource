@@ -120,13 +120,6 @@ begin
 end;
 {$endif}
 
-{$if defined(WIN32) or defined(WIN64)}
-procedure ModuleUnloadHandler(Module: HMODULE);
-begin
-  UnRegisterModuleClasses(Module);
-end;
-{$endif}
-
 function FindClass(const AClassName: string): TPersistentClass;
 
 begin
@@ -258,6 +251,13 @@ begin
   if pg = nil then begin
     pg := TComponentPage(ComponentPages.Add);
     pg.Name := Page;
+    { Page usually is a constant living in the caller's data section, so the
+      assignment above only copies a pointer with refcount -1. If the caller
+      is a package, that data section goes away on UnloadPackage, and both
+      UnRegisterModuleComponents and the finalization of ComponentPages would
+      then finalize a string body at an unmapped address. Force a private copy
+      on the host heap instead, so the stored name outlives any package. }
+    UniqueString(pg.Name);
   end;
 
   if pg.Classes = nil then
@@ -296,5 +296,48 @@ procedure RegisterNonActiveX(ComponentClasses: array of TComponentClass;
 
 begin
 end;
+
+
+procedure UnRegisterModuleComponents(Module: HMODULE);
+{$if defined(WIN32) or defined(WIN64)}
+var
+  i,j : Integer;
+  pg : TComponentPage;
+  info : TMemoryBasicInformation;
+begin
+  { counterpart of UnRegisterModuleClasses for the component palette.
+    RegisterComponents/RegisterNoIcon record the component classes here
+    before handing them to the IDE hook, so a package that unregisters
+    itself through that hook still leaves its VMT pointers in this list;
+    they would dangle once the image is unmapped. }
+  if not Assigned(ComponentPages) then
+    exit;
+  for i:=ComponentPages.Count-1 downto 0 do
+    begin
+      pg:=TComponentPage(ComponentPages.Items[i]);
+      if Assigned(pg.Classes) then
+        for j:=pg.Classes.Count-1 downto 0 do
+          if (VirtualQuery(pg.Classes[j],info,SizeOf(info))=SizeOf(info)) and
+             (HMODULE(info.AllocationBase)=Module) then
+            pg.Classes.Delete(j);
+      { A page that lost all its components is dropped, except for index 0:
+        that one is the page reserved for the NoIcon components and
+        RegisterNoIcon addresses it by position. }
+      if (i>0) and ((pg.Classes=nil) or (pg.Classes.Count=0)) then
+        pg.Free;
+    end;
+end;
+{$else}
+begin
+end;
+{$endif}
+
+{$if defined(WIN32) or defined(WIN64)}
+procedure ModuleUnloadHandler(Module: HMODULE);
+begin
+  UnRegisterModuleClasses(Module);
+  UnRegisterModuleComponents(Module);
+end;
+{$endif}
 
 
