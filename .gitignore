@@ -115,3 +115,7 @@ compiler/msgtxt.inc
 compiler/msgidx.inc
 compiler/*.ppu
 compiler/*.o
+rtl/units/
+rtl/**/*.ppu
+rtl/**/*.o
+rtl/**/*.a
