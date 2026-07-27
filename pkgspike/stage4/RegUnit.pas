@@ -5,10 +5,13 @@ unit RegUnit;
 interface
 
 uses
-  Classes;
+  Classes,
+  BaseRegUnit;
 
 type
-  TRegDemo = class(TComponent)
+  { Derives from a class in a required package, so BaseRegUnit really is in
+    RegPkg's used_units and the skip rule has something to skip. }
+  TRegDemo = class(TBaseThing)
   end;
 
 procedure Register;
