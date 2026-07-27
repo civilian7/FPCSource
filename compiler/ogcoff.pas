@@ -1,4 +1,4 @@
-{
+﻿{
     Copyright (c) 1998-2006 by Peter Vreman
 
     Contains the binary coff/PE reader and writer
@@ -3847,9 +3847,46 @@ const pemagic : array[0..3] of byte = (
 
 
       procedure TPECoffexeoutput.MemPos_ExeSection(const aname:string);
+        var
+          exesec : TExeSection;
+          i : longint;
+          isempty : boolean;
         begin
           if aname='.reloc' then
-            GenerateRelocs;
+            begin
+              GenerateRelocs;
+              { A small image can end up with no base relocations at all
+                (seen with a package DLL containing a single tiny unit).
+                Emitting the section anyway produces a zero-VirtualSize
+                section header whose RVA collides with the next section,
+                and the loader rejects the DLL with ERROR_BAD_EXE_FORMAT.
+                Drop the empty section instead: the PE header writer then
+                sets PE_FILE_RELOCS_STRIPPED (it checks for the section's
+                absence) and UpdateDataDir leaves the reloc directory
+                zeroed. }
+              exesec:=FindExeSection('.reloc');
+              if assigned(exesec) then
+                begin
+                  isempty:=true;
+                  for i:=0 to exesec.ObjSectionList.Count-1 do
+                    if TObjSection(exesec.ObjSectionList[i]).Size<>0 then
+                      begin
+                        isempty:=false;
+                        break;
+                      end;
+                  if isempty then
+                    begin
+                      for i:=0 to ExeSectionList.Count-1 do
+                        if ExeSectionList[i]=exesec then
+                          begin
+                            ExeSectionList[i]:=nil;
+                            break;
+                          end;
+                      ExeSectionList.Pack;
+                      exit;
+                    end;
+                end;
+            end;
           inherited;
         end;
 

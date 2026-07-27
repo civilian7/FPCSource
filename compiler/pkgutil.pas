@@ -1,4 +1,4 @@
-{
+﻿{
     Copyright (c) 2013-2016 by Free Pascal Development Team
 
     This unit implements basic parts of the package system
@@ -73,6 +73,17 @@ implementation
     end;
 
 
+  { True when a symtable ultimately lives in a unit's implementation part.
+    For methods of (possibly nested) record/object types this walks up the
+    defowner chain to the containing module-level symtable. }
+  function ownedbystaticsymtable(st:tsymtable):boolean;
+    begin
+      while assigned(st) and (st.symtabletype in [objectsymtable,recordsymtable]) do
+        st:=tdef(st.defowner).owner;
+      result:=assigned(st) and (st.symtabletype=staticsymtable);
+    end;
+
+
   procedure exportprocsym(sym:tprocsym;symtable:tsymtable);
     var
       i : longint;
@@ -86,13 +97,19 @@ implementation
               ((pd.procoptions*[po_external])=[]) and
               (
                 (symtable.symtabletype in [globalsymtable,recordsymtable,objectsymtable]) or
-                (
-                  (symtable.symtabletype=staticsymtable) and
-                  (
-                    ([po_public,po_has_public_name]*pd.procoptions<>[]) or
-                    (df_has_global_ref in pd.defoptions)
-                  )
-                )
+                (symtable.symtabletype=staticsymtable)
+              ) and
+              (
+                { interface symbols are exported unconditionally;
+                  implementation-only symbols (unit level or methods of
+                  implementation types, however deeply nested) only when the
+                  object file actually carries them as globals -- i.e. public,
+                  or referenced from an inlined routine (df_has_global_ref).
+                  Exporting anything else would name symbols the linker
+                  cannot resolve. }
+                not ownedbystaticsymtable(symtable) or
+                ([po_public,po_has_public_name]*pd.procoptions<>[]) or
+                (df_has_global_ref in pd.defoptions)
               ) then
             begin
               exportallprocdefnames(tprocsym(sym),pd,[eo_name,eo_no_sym_name]);
@@ -126,6 +143,11 @@ implementation
           end;
         staticvarsym:
           begin
+            { class vars of implementation types: same rule as unit-level
+              statics in insert_export -- only when actually global }
+            if ownedbystaticsymtable(tsymtable(arg)) and
+                ([vo_is_public,vo_has_global_ref]*tstaticvarsym(sym).varoptions=[]) then
+              exit;
             varexport(tsym(sym).mangledname);
           end;
         else
@@ -170,16 +192,32 @@ implementation
 
   procedure export_typedef(def:tdef;symtable:tsymtable;global:boolean);
     begin
-      if not (global or is_class(def)) or
-          ([df_internal,df_generic]*def.defoptions<>[]) or
+      if ([df_internal,df_generic]*def.defoptions<>[]) or
           { happens with type renaming declarations ("abc = xyz") }
           (def.owner<>symtable) then
         exit;
-      if ds_rtti_table_written in def.defstates then
-        exportname(def.rtti_mangledname(fullrtti));
-      if (ds_init_table_written in def.defstates) and
-          def.needs_separate_initrtti then
-        exportname(def.rtti_mangledname(initrtti));
+      if not (global or is_class(def)) then
+        begin
+          { Implementation-only types used to be skipped entirely, but an
+            inline routine in the interface may expand into a consumer of
+            the package and call methods of such a type -- e.g. the system
+            unit's heap manager: SYSTEM$_$HEAPINC_$_THREADSTATE_$__$$_ORPHAN
+            is referenced by every program built against an rtl package and
+            was not exported, so the DLL failed to load. Walk record/object
+            types so their methods reach exportprocsym, which only exports
+            the ones the object file actually carries as globals
+            (po_public / df_has_global_ref). }
+          if not (def.typ in [recorddef,objectdef]) then
+            exit;
+        end
+      else
+        begin
+          if ds_rtti_table_written in def.defstates then
+            exportname(def.rtti_mangledname(fullrtti));
+          if (ds_init_table_written in def.defstates) and
+              def.needs_separate_initrtti then
+            exportname(def.rtti_mangledname(initrtti));
+        end;
       case def.typ of
         recorddef,
         objectdef:
