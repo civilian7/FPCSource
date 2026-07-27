@@ -15,8 +15,17 @@ program host13;
   이미지를 가리킨 채 남고, 다음 GetClass 순회가 그 VMT 를 읽는 순간
   액세스 위반이 난다.
 
+  RegPkg 는 Register 를 가진 contained 유닛이 둘(RegUnit, RegUnit2)이고
+  BaseRegUnit 은 required 패키지 소속이라 빠져야 한다. 그래서 TableCount
+  자체도 기계 검사한다 - 값만 찍으면 엔트리가 하나뿐인 워크나 BaseRegUnit
+  이 잘못 실린 워크가 조용히 통과한다. TBaseThing 기대는 조상 체인 등록
+  으로도 채워지므로 그것만으로는 후자를 잡지 못한다. TRegDemo2 를 따로
+  본다 - 두 번째 엔트리가 실제로 불렸는지는 그 클래스로만 드러난다.
+
   기대(수정 후):
+    REGPROCS 엔트리       = 2
     로드 후   BasePkg 매핑 = TRUE
+    등록 후   TRegDemo2    = TRUE
     등록 후   TBaseThing   = TRUE
     언로드 후 BasePkg 매핑 = FALSE  (의존으로 함께 언매핑)
     언로드 후 TBaseThing   = FALSE  (2차 통지의 staleness 청소가 걷어냄)
@@ -52,8 +61,9 @@ type
   end;
 
 { 설계시 등록 테이블을 걸어 contained 유닛의 Register 를 전부 부른다.
-  IDE 가 하는 일을 최소한으로 흉내낸 것이다. }
-procedure CallRegisterProcs(AModule: HMODULE);
+  IDE 가 하는 일을 최소한으로 흉내낸 것이다. 호출한 엔트리 수를 돌려주어
+  호출부가 테이블 크기까지 검사할 수 있게 한다. }
+function CallRegisterProcs(AModule: HMODULE): PtrUInt;
 var
   LTable: PRegProcTable;
   I: PtrUInt;
@@ -73,6 +83,8 @@ begin
       LTable^.Procs[I].Proc();
     end;
   end;
+
+  Result := LTable^.TableCount;
 end;
 
 function IsMapped(const AName: string): Boolean;
@@ -101,6 +113,7 @@ end;
 
 var
   GLib: HMODULE;
+  GCount: PtrUInt;
 begin
   Expect('로드 전 BasePkg 매핑', IsMapped('BasePkg.dll'), False);
 
@@ -110,8 +123,16 @@ begin
   GLib := LoadPackage('RegPkg.dll');
   Expect('로드 후 BasePkg 매핑 (의존으로 매핑)', IsMapped('BasePkg.dll'), True);
 
-  CallRegisterProcs(GLib);
+  GCount := CallRegisterProcs(GLib);
+  { RegUnit + RegUnit2 만. BaseRegUnit 은 required 패키지(BasePkg) 소속이라
+    RegPkg 의 테이블에 실리면 안 된다 - 3 이면 스킵 규칙이 깨진 것이고
+    1 이면 다중 엔트리 워크가 깨진 것이다. }
+  Expect('REGPROCS 엔트리 2개 (RegUnit, RegUnit2)', GCount = 2, True);
+
   Expect('등록 후 TRegDemo', Assigned(GetClass('TRegDemo')), True);
+  { 두 번째 엔트리가 실제로 불렸는가 - TRegDemo2 는 RegUnit2.Register 로만
+    등록되고 어떤 조상 체인으로도 딸려오지 않는다. }
+  Expect('등록 후 TRegDemo2 (두 번째 엔트리)', Assigned(GetClass('TRegDemo2')), True);
   Expect('등록 후 TBaseThing (조상 체인 등록)', Assigned(GetClass('TBaseThing')), True);
 
   UnloadPackage(GLib);
