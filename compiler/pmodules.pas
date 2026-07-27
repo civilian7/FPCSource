@@ -2539,6 +2539,11 @@ type
                  if (cs_link_deffile in current_settings.globalswitches) then
                    deffile.writefile;
 
+                 if curr.package_designonly then
+                   pkg.packageflags:=pkg.packageflags or 1;
+                 if curr.package_runonly then
+                   pkg.packageflags:=pkg.packageflags or 2;
+
                  { generate the pcp file }
                  pkg.savepcp;
 
@@ -3168,6 +3173,7 @@ type
          i : Longint;
          feature : tfeature;
          load_ok : boolean;
+         pentry : ppackageentry;
 
       begin
          result:=true;
@@ -3240,6 +3246,18 @@ type
          { load all packages, so we know whether a unit is contained inside a
            package or not }
          load_packages;
+
+         { A design-time package belongs to the IDE, never to a program.
+           Delphi rejects this at compile time and so do we; the reverse
+           direction (a run-time-only package being installed) cannot be
+           known here and is the host's call. }
+         for i:=0 to packagelist.count-1 do
+           begin
+             pentry:=ppackageentry(packagelist[i]);
+             if assigned(pentry^.package) and
+                ((tpcppackage(pentry^.package).packageflags and 1)<>0) then
+               Message1(package_e_designonly_in_program,pentry^.realpkgname);
+           end;
 
          { set implementation flag }
          curr.in_interface:=false;

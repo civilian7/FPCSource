@@ -4223,6 +4223,11 @@ package_u_ppl_filename=13029_U_PPL filename $1
 package_e_designonly_and_runonly=13030_E_A package can not be both DESIGNONLY and RUNONLY
 % A package source specified both the \var{\{\$DESIGNONLY\}} and
 % \var{\{\$RUNONLY\}} directives, but a package can only be one kind.
+package_e_designonly_in_program=13031_E_Design-time only package $1 can not be linked into a program
+% A program (or library) named a design-time only package via \var{-FP}.
+% Design-time packages belong to the IDE and can never be linked into a
+% program image, whether required directly or pulled in indirectly through
+% another package's \var{requires} clause.
 %
 % \end{description}
 # EndOfTeX
