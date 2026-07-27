@@ -175,10 +175,11 @@ interface
         headerflags   : cardinal;  { the PPU header flags }
         longversion   : cardinal;  { longer version than what fits in the ppu header }
         moduleflags   : tmoduleflags; { ppu flags that do not need to be known by just reading the ppu header }
-        { Package kind, from {$DESIGNONLY} / {$RUNONLY} in a .dpk. Deliberately
-          not a tmoduleflag: that set is serialised into every .ppu as a 4-byte
-          set and is already 30 members deep, and a package's kind is a property
-          of the package, not of a unit -- it travels in the .pcp instead. }
+        { Package kind, from the DESIGNONLY / RUNONLY directives in a .dpk.
+          Deliberately not a tmoduleflag: that set is serialised into every
+          .ppu as a 4-byte set and is already 30 members deep, and a
+          package's kind is a property of the package, not of a unit -- it
+          travels in the .pcp instead. }
         package_designonly : boolean;
         package_runonly    : boolean;
         islibrary     : boolean;  { if it is a library (win32 dll) }

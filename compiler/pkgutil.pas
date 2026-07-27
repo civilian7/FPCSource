@@ -33,6 +33,7 @@ interface
   Function RewritePPU(const PPUFn:String;OutStream:TCStream):Boolean;
   procedure export_unit(u:tmodule);
   procedure export_package_initfinal;
+  procedure export_package_packageflags;
   procedure load_packages;
   procedure add_package(const name:string;ignoreduplicates:boolean;direct:boolean);
   procedure add_package_unit_ref(package:tpackage);
@@ -319,6 +320,20 @@ implementation
         per-image, so it does not clash with the host program's own
         (unexported) INITFINAL. }
       varexport('INITFINAL');
+    end;
+
+
+  procedure export_package_packageflags;
+    begin
+      { Emitted by tnodeutils.InsertPackageFlags as the asm symbol
+        PACKAGEFLAGS. A host that only ever sees the DLL -- it does not get
+        the .pcp -- reads the package kind from here:
+
+          bit 0  design-time only, must not be linked into a program
+          bit 1  run-time only, must not be installed into an IDE
+
+        Both clear means either use, which is Delphi's default. }
+      varexport('PACKAGEFLAGS');
     end;
 
   Function RewritePPU(const PPUFn:String;OutStream:TCStream):Boolean;

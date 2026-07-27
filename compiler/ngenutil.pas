@@ -114,6 +114,7 @@ interface
 
       class function create_main_procdef(const name: string; potype:tproctypeoption; ps: tprocsym):tdef; virtual;
       class procedure InsertInitFinalTable(main : tmodule);
+      class procedure InsertPackageFlags(main : tmodule);
      protected
       class procedure InsertRuntimeInits(const prefix:string;list:TLinkedList;unitflag:tmoduleflag); virtual;
       class procedure InsertRuntimeInitsTablesTable(const prefix,tablename:string;unitflag:tmoduleflag); virtual;
@@ -1335,6 +1336,36 @@ implementation
 
       unitinits.free;
       unitinits := nil;
+    end;
+
+
+  class procedure tnodeutils.InsertPackageFlags(main : tmodule);
+    var
+      tcb : ttai_typedconstbuilder;
+      flagsdef : tdef;
+      flags : longword;
+    begin
+      flags:=0;
+      if main.package_designonly then
+        flags:=flags or 1;
+      if main.package_runonly then
+        flags:=flags or 2;
+
+      tcb:=ctai_typedconstbuilder.create([tcalo_make_dead_strippable,tcalo_new_section]);
+      tcb.begin_anonymous_record('',default_settings.packrecords,sizeof(pint),
+        targetinfos[target_info.system]^.alignment.recordalignmin);
+      tcb.emit_ord_const(flags,u32inttype);
+      flagsdef:=tcb.end_anonymous_record;
+
+      current_asmdata.asmlists[al_globals].concatlist(
+        tcb.get_final_asmlist(
+          current_asmdata.DefineAsmSymbol('PACKAGEFLAGS',AB_GLOBAL,AT_DATA,flagsdef),
+          flagsdef,
+          sec_data,'PACKAGEFLAGS',const_align(sizeof(pint))
+        )
+      );
+
+      tcb.free;
     end;
 
 

@@ -2384,8 +2384,10 @@ type
            run time has no such help, so it publishes its table under the
            well-known name PACKAGE_INITFINAL for the loader to walk. }
          cnodeutils.InsertInitFinalTable(curr);
+         cnodeutils.InsertPackageFlags(curr);
          exportlib.ignoreduplicates:=true;
          pkgutil.export_package_initfinal;
+         pkgutil.export_package_packageflags;
          exportlib.ignoreduplicates:=false;
 
          if target_info.system in systems_all_windows+systems_nativent then
