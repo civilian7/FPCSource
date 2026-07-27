@@ -2405,7 +2405,15 @@ type
               add_package_unit_ref(hp2.package);
             if hp2.is_unit and
                not assigned(hp2.globalsymtable) then
-              loaded_units.remove(hp2);
+              begin
+                { Hand the module over to unloaded_units, the way proc_program
+                  does. loaded_units.remove only unlinks -- dropping the module
+                  here leaves curr.used_units pointing at storage that gets
+                  recycled, and the ctask cycle walk then reads it back as
+                  garbage (observed: used_units field holding ASCII text). }
+                loaded_units.remove(hp2);
+                unloaded_units.concat(hp2);
+              end;
           end;
 
          exportlib.ignoreduplicates:=true;
@@ -2517,6 +2525,13 @@ type
                  { generate the pcp file }
                  pkg.savepcp;
 
+                 { before freeing modules, free used_units -- proc_create_executable
+                   does the same. Without it curr.used_units keeps pointing at the
+                   modules destroyed just below, and ctask's cycle walk reads them
+                   back as recycled memory. }
+                 curr.used_units.free;
+                 curr.used_units:=TLinkedList.Create;
+
                  { insert all .o files from all loaded units and
                    unload the units, we don't need them anymore.
                    Keep the curr because that is still needed }
@@ -2555,6 +2570,16 @@ type
              pkg.free;
              pkg := nil;
           end;
+
+         { Tell ctask the module is done. proc_program_after_parsing sets the
+           same pair; without it the package stays at ms_compile, processqueue
+           does not take the `not main_module.scc_tree_unfinished` exit and
+           loops once more over modules this routine has already freed. }
+         if curr.state<>ms_moduleerror then
+           begin
+             curr.crc_final:=true;
+             curr.state:=ms_compiled;
+           end;
       end;
 
     procedure proc_create_executable(curr, sysinitmod: tmodule; islibrary : boolean);
