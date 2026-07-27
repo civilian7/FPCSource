@@ -1,4 +1,4 @@
-{
+﻿{
     Copyright (c) 1998-2011 by Florian Klaempfl
 
     Generic version of some node tree helper routines that can be overridden
@@ -1118,6 +1118,16 @@ implementation
       hp:=tused_unit(m.used_units.first);
       while assigned(hp) do
        begin
+         { When building a package, units that belong to a *required* package
+           are initialized by that package (or by the program that links it),
+           not by us -- skip them so each unit appears in exactly one table. }
+         if current_module.ispackage and
+            assigned(hp.u.package) and
+            (hp.u.package<>current_module.package) then
+           begin
+             hp:=tused_unit(hp.next);
+             continue;
+           end;
          if (not hp.u.initfinalchecked) then
            begin
            hp.u.initfinalchecked:=True;

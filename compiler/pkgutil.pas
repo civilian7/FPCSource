@@ -32,6 +32,7 @@ interface
   procedure createimportlibfromexternals;
   Function RewritePPU(const PPUFn:String;OutStream:TCStream):Boolean;
   procedure export_unit(u:tmodule);
+  procedure export_package_initfinal;
   procedure load_packages;
   procedure add_package(const name:string;ignoreduplicates:boolean;direct:boolean);
   procedure add_package_unit_ref(package:tpackage);
@@ -302,6 +303,22 @@ implementation
             if sym.bind=AB_INDIRECT then
               varexport(sym.name);
           end;
+    end;
+
+
+  procedure export_package_initfinal;
+    begin
+      { The table itself is emitted by tnodeutils.InsertInitFinalTable under
+        the asm symbol INITFINAL. Publishing it lets a run-time loader find
+        the package's units:
+
+          GetProcAddress(handle, 'INITFINAL')
+
+        yields a PInitFinalTable whose Procs[1..TableCount] hold the INIT$ /
+        FINALIZE$ entry points of the units this package contains. The name is
+        per-image, so it does not clash with the host program's own
+        (unexported) INITFINAL. }
+      varexport('INITFINAL');
     end;
 
   Function RewritePPU(const PPUFn:String;OutStream:TCStream):Boolean;

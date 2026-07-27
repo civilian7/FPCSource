@@ -2374,6 +2374,20 @@ type
              { Note: all contained units are considered as used }
            end;
 
+         { Emit this package's own initialization/finalization table, covering
+           the units it contains (units of required packages are filtered out
+           in get_init_final_list).
+
+           A package linked at load time is initialized by the program: the
+           program's own table lists the package's units and references their
+           INIT$ entry points through the import table. A package loaded at
+           run time has no such help, so it publishes its table under the
+           well-known name PACKAGE_INITFINAL for the loader to walk. }
+         cnodeutils.InsertInitFinalTable(curr);
+         exportlib.ignoreduplicates:=true;
+         pkgutil.export_package_initfinal;
+         exportlib.ignoreduplicates:=false;
+
          if target_info.system in systems_all_windows+systems_nativent then
            begin
              main_procinfo:=create_main_proc('_PkgEntryPoint',potype_pkgstub,curr.localsymtable);

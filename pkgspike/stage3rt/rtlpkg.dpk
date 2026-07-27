@@ -1,0 +1,11 @@
+package rtlpkg;
+
+{$mode delphi}
+
+contains
+  system,
+  objpas,
+  sysutils,
+  classes;
+
+end.
