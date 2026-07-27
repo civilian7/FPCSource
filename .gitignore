@@ -119,3 +119,9 @@ rtl/units/
 rtl/**/*.ppu
 rtl/**/*.o
 rtl/**/*.a
+packages/**/units/
+packages/**/*.ppu
+packages/**/*.o
+packages/**/*.a
+packages/**/*.rsj
+packages/**/*.exe
