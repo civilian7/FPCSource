@@ -4220,6 +4220,9 @@ package_w_unit_from_indirect_package=13028_W_Unit $1 is imported from indirectly
 % should require this unit directly to avoid confusion.
 package_u_ppl_filename=13029_U_PPL filename $1
 % The name of the binary package library that is stored in the PCP.
+package_e_designonly_and_runonly=13030_E_A package can not be both DESIGNONLY and RUNONLY
+% A package source specified both the \var{\{\$DESIGNONLY\}} and
+% \var{\{\$RUNONLY\}} directives, but a package can only be one kind.
 %
 % \end{description}
 # EndOfTeX
