@@ -106,7 +106,9 @@ function GetFileVersion(const AFileName: UnicodeString): Cardinal;
   the compiler). LoadPackage loads the DLL and runs the initialization of
   the units the package contains; UnloadPackage runs their finalization,
   notifies the registered module-unload procs (Classes uses this to drop
-  classes registered from the departing image) and frees the DLL.
+  classes registered from the departing image), frees the DLL and notifies
+  once more with handle 0, which reclaims what a package unmapped as a
+  dependency left behind (see the comment in UnloadPackage).
 
   Delphi's unload contract applies unchanged: before UnloadPackage free
   every instance created from the package and let no reference -- string
@@ -287,6 +289,32 @@ procedure UnloadPackage(Module: HMODULE);
     for i:=High(ModuleUnloadProcs) downto 0 do
       ModuleUnloadProcs[i](Module);
     FreeLibrary(Module);
+    { Notify a second time with a handle that can match no image. FreeLibrary
+      above dropped the reference counts of everything this package requires,
+      so a required package held by nothing else was just unmapped -- without a
+      module unload notification of its own. Its entries were still mapped and
+      committed during the first round, so neither an ownership nor a staleness
+      test could select them, and they would linger pointing into an unmapped
+      image: RegisterClass registers the whole ancestor chain, so registering a
+      class from the departing package also registers ancestors owned by the
+      package it requires, and GetClass dereferences those entries (ClassNameIs
+      reads the VMT).
+
+      Passing 0 makes every subscriber's ownership test fail, so only the
+      staleness check runs. That cannot select a live class -- one always sits
+      in a mapped, committed image -- and a dependency still referenced by
+      another loaded package stays mapped and survives. Subscribers that only
+      compare against the passed handle are simply a no-op here.
+
+      Deliberate deviation: Delphi's UnloadPackage notifies only before
+      FreeLibrary. This fork accepts the difference because it exists to
+      support a common runtime package with design-time packages requiring it,
+      which is exactly the shape that produces these cross-image ancestors.
+      Without the second round the dangling entries are reclaimed only when
+      some later unload happens to run the sweep while the image is still
+      unmapped, leaving an access violation open until then. }
+    for i:=High(ModuleUnloadProcs) downto 0 do
+      ModuleUnloadProcs[i](0);
   end;
 
 
