@@ -5165,7 +5165,11 @@ begin
     { Derive the config name from the executable, the way Delphi's dcc64
       reads dcc64.cfg. The distribution puts a compiler and its config
       side by side in bin/, so a fixed 'fpc.cfg' would make two different
-      compilers share one config. [name] on the command line still wins. }
+      compilers share one config. The [name] branch above only fires when
+      a non-empty cmd is passed in, which happens when the compiler is
+      driven as a library with the config name supplied by the caller;
+      the standalone binary always calls compiler.Compile('') and never
+      reaches it. }
     ppccfg:=ChangeFileExt(ExtractFileName(paramstr(0)),'.cfg');
 
 { first pass reading of parameters, only -i -v -T etc.}

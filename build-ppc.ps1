@@ -95,12 +95,20 @@ try {
     '{0}  ({1:N1} 초)' -f $Output, $sw.Elapsed.TotalSeconds
 
     if ($DeployTo) {
-        if (-not (Test-Path $DeployTo)) {
-            New-Item -ItemType Directory -Path $DeployTo -Force | Out-Null
+        $deployParent = Split-Path -Parent $DeployTo
+        if ($deployParent -and -not (Test-Path $deployParent)) {
+            # 배포 대상의 부모 폴더조차 없다는 것은 이 트리가 LumiPascal 워크스페이스가
+            # 아니라는 뜻이다 - 관련 없는 컴퓨터에 엉뚱한 폴더를 새로 만들지 않는다.
+            "배포 건너뜀: {0} 의 상위 폴더가 없습니다" -f $DeployTo
         }
+        else {
+            if (-not (Test-Path $DeployTo)) {
+                New-Item -ItemType Directory -Path $DeployTo -Force | Out-Null
+            }
 
-        Copy-Item $Output $DeployTo -Force
-        '배포: {0}' -f (Join-Path $DeployTo 'fcc64.exe')
+            Copy-Item $Output $DeployTo -Force
+            '배포: {0}' -f (Join-Path $DeployTo 'fcc64.exe')
+        }
     }
 }
 finally {
