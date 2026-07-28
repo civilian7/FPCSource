@@ -5162,7 +5162,11 @@ begin
       Delete(cmd,1,pos(']',cmd));
     end
   else
-    ppccfg:='fpc.cfg';
+    { Derive the config name from the executable, the way Delphi's dcc64
+      reads dcc64.cfg. The distribution puts a compiler and its config
+      side by side in bin/, so a fixed 'fpc.cfg' would make two different
+      compilers share one config. [name] on the command line still wins. }
+    ppccfg:=ChangeFileExt(ExtractFileName(paramstr(0)),'.cfg');
 
 { first pass reading of parameters, only -i -v -T etc.}
   option.firstpass:=true;

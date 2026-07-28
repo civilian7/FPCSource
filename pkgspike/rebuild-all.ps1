@@ -17,9 +17,9 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
 
-# stage1~3 에는 로컬 fpc.cfg 가 없어 RTL 유닛 경로를 여기서 준다.
-# stage3rt·stage4 는 자기 fpc.cfg 가 툴체인 설정을 #INCLUDE 하므로 무관하다
-# (컴파일러는 cwd 의 fpc.cfg 를 찾으면 그것만 읽고 기본 설정으로 대체하지 않는다).
+# stage1~3 에는 로컬 fcc64.cfg 가 없어 RTL 유닛 경로를 여기서 준다.
+# stage3rt·stage4 는 자기 fcc64.cfg 가 툴체인 설정을 #INCLUDE 하므로 무관하다
+# (컴파일러는 cwd 의 fcc64.cfg 를 찾으면 그것만 읽고 기본 설정으로 대체하지 않는다).
 $env:PPC_CONFIG_PATH = Join-Path (Split-Path $PSScriptRoot -Parent) 'cfg'
 
 if ($CleanStale) {
