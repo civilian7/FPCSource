@@ -10,7 +10,10 @@ param(
     [switch]$Clean,
     # 스택 트레이스에 파일·행이 찍히게 한다. 패키지 경로를 파고들 때 필수.
     # ⚠️ -O2 이상은 프레임 포인터를 생략해 트레이스를 망가뜨리므로 -O1 로 낮춘다.
-    [switch]$Debug
+    [switch]$Debug,
+    # 빌드한 컴파일러를 여기로 배포한다. 빈 문자열이면 배포하지 않는다.
+    # LumiPascal 는 이것을 lumi.json 의 compiler.path 로 가리켜 환경변수 없이 선다.
+    [string]$DeployTo = 'C:\works\LumiPascal\bin'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -90,6 +93,15 @@ try {
     }
 
     '{0}  ({1:N1} 초)' -f $Output, $sw.Elapsed.TotalSeconds
+
+    if ($DeployTo) {
+        if (-not (Test-Path $DeployTo)) {
+            New-Item -ItemType Directory -Path $DeployTo -Force | Out-Null
+        }
+
+        Copy-Item $Output $DeployTo -Force
+        '배포: {0}' -f (Join-Path $DeployTo 'fcc64.exe')
+    }
 }
 finally {
     Pop-Location
