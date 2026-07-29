@@ -63,12 +63,27 @@ if (-not (Test-Path $MsgTxt) -or
 Push-Location $Compiler
 try {
     # -Fu 는 유닛 검색 경로, -Fi 는 include 검색 경로. x86_64 는 x86 의 공용 코드를 함께 쓴다.
+    #
+    # 하나의 OS(Windows), 하나의 타깃(Win64)만 지원한다 - 좁지만 깊게.
+    # x86_64/cputarg.pas 가 {$ifndef NOTARGETxxx} 로 감싸 둔 opt-out 스위치를 쓴다.
+    # 스탭스도 뺀다 - 우리는 DWARF(-gw3)만 쓴다.
+    #
+    # ⚠️ define 을 바꾼 뒤에는 반드시 -Clean 으로 지어야 한다. FPC 는 define 이
+    #    달라져도 기존 .ppu 를 재사용하므로(실측), systems\·x86_64\ 의 낡은
+    #    .ppu 가 남아 있으면 스위치가 조용히 무시된다.
+    $narrow = @(
+        '-dNOTARGETLINUX', '-dNOTARGETFREEBSD', '-dNOTARGETDARWIN',
+        '-dNOTARGETNATIVENT', '-dNOTARGETSUNOS', '-dNOTARGETAROS',
+        '-dNOTARGETHAIKU', '-dNOTARGETEMBEDDED', '-dNOTARGETANDROID',
+        '-dNoDbgStabs'
+    )
+
     $fa = @(
         '-dx86_64', '-dGDB',
         '-Fux86_64', '-Fux86', '-Fusystems',
         '-Fix86_64', '-Fix86', '-Fisystems', '-Fimsg',
         '-FE.', '-ofcc64'
-    )
+    ) + $narrow
 
     if ($Debug) {
         $fa += @('-O1', '-gw3', '-gl')
