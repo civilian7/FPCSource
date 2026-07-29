@@ -1,4 +1,0 @@
-src/ffi.pp=namespaced/Api.Ffi.pp
-{s*:src/}=namespaced/
-{i+:src/}
-src/ffi.manager.pp=namespaced/Api.Ffi.manager.pp

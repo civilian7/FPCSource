@@ -1,4 +1,0 @@
-src/vgamouse.pp=namespaced/Api.Vgamouse.pp
-{s*:src/}=namespaced/
-{i+:src/}
-src/svgalib.pp=namespaced/Api.Svgalib.pp

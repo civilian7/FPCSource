@@ -1,3 +1,0 @@
-src/unixutils.pp=namespaced/UnixApi.Utils.pp
-{s*:src/}=namespaced/
-{i+:src/}

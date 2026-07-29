@@ -1,9 +1,0 @@
-{$IFNDEF FPC_DOTTEDUNITS}
-unit zorbadyn;
-{$ENDIF FPC_DOTTEDUNITS}
-
-{$DEFINE LOAD_DYNAMICALLY}
-{$i zorba.inc}
-
-end.
-

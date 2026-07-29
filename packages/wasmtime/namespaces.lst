@@ -1,3 +1,0 @@
-src/wasmtime.pp=namespaced/Api.WasmTime.pp
-{s*:src/}=namespaced/
-{i+:src/}

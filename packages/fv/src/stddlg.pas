@@ -1,1 +1,0 @@
-{$I stddlg.inc}

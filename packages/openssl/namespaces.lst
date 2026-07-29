@@ -1,5 +1,0 @@
-src/opensslsockets.pp=namespaced/System.Net.Opensslsockets.pp
-{s*:src/}=namespaced/
-{i+:src/}
-src/openssl.pas=namespaced/Api.Openssl.pas
-src/fpopenssl.pp=namespaced/System.Net.Fpopenssl.pp

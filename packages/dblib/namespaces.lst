@@ -1,3 +1,0 @@
-src/dblib.pp=namespaced/Api.Dblib.pp
-{s*:src/}=namespaced/
-{i+:src/}

@@ -1,4 +1,0 @@
-src/ldap.pas=namespaced/Api.Ldap.pas
-{s*:src/}=namespaced/
-{i+:src/}
-src/lber.pas=namespaced/Api.Lber.pas

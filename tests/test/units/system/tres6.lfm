@@ -1,3 +1,0 @@
-object MyRes: TMyRes
-  Str1 = 'Foobar'
-end

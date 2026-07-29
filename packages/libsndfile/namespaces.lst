@@ -1,3 +1,0 @@
-src/sndfile.pp=namespaced/Api.Sndfile.pp
-{s*:src/}=namespaced/
-{i+:src/}

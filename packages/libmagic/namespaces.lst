@@ -1,3 +1,0 @@
-src/libmagic.pp=namespaced/Api.Magic.pp
-{s*:src/}=namespaced/
-{i+:src/}

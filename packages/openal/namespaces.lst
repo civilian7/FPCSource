@@ -1,3 +1,0 @@
-src/openal.pas=namespaced/Api.Openal.pas
-{s*:src/}=namespaced/
-{i+:src/}

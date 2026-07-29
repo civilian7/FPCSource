@@ -1,3 +1,0 @@
-src/gcmem.pp=namespaced/Api.Libgc.Gcmem.pp
-{s*:src/}=namespaced/
-{i+:src/}

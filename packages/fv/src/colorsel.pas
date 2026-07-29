@@ -1,1 +1,0 @@
-{$I colorsel.inc}

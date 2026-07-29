@@ -1,3 +1,0 @@
-src/symbolic.pas=namespaced/System.Symbolic.pas
-{s*:src/}=namespaced/
-{i+:src/}

@@ -1,3 +1,0 @@
-unit MacOsApi.SCSI;
-{$DEFINE FPC_DOTTEDUNITS}
-{$i SCSI.pas}

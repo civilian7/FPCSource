@@ -1,3 +1,0 @@
-src/jni.pas=namespaced/Api.Jni.pas
-{s*:src/}=namespaced/
-{i+:src/}

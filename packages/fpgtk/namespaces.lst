@@ -1,3 +1,0 @@
-src/pgtk/pgtk.pp=namespaced/FpGtk.Pgtk.pp
-{s*:src/pgtk/}=namespaced/
-{i+:src/pgtk/}

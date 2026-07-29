@@ -1,3 +1,0 @@
-src/mad.pas=namespaced/Api.Mad.pas
-{s*:src/}=namespaced/
-{i+:src/}

@@ -127,3 +127,7 @@ packages/**/*.o
 packages/**/*.a
 packages/**/*.rsj
 packages/**/*.exe
+
+# 빌드 산출물 - build-ppc.ps1 이 여기로 모은다
+/obj/
+/bin/

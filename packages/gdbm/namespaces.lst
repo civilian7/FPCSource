@@ -1,3 +1,0 @@
-src/gdbm.pp=namespaced/Api.Gdbm.pp
-{s*:src/}=namespaced/
-{i+:src/}

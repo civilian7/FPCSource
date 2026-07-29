@@ -1,3 +1,0 @@
-src/bfd.pas=namespaced/UnixApi.Bfd.pas
-{s*:src/}=namespaced/
-{i+:src/}

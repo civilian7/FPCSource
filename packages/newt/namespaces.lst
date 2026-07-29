@@ -1,3 +1,0 @@
-src/newt.pp=namespaced/Api.Newt.pp
-{s*:src/}=namespaced/
-{i+:src/}

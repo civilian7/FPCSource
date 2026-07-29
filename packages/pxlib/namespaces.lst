@@ -1,3 +1,0 @@
-src/pxlib.pp=namespaced/Api.Pxlib.pp
-{s*:src/}=namespaced/
-{i+:src/}

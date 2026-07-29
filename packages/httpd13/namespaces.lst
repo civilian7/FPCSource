@@ -1,3 +1,0 @@
-src/httpd.pas=namespaced/Api.HttpD13.pas
-{s*:src/}=namespaced/
-{i+:src/}

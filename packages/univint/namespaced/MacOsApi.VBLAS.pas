@@ -1,3 +1,0 @@
-unit MacOsApi.VBLAS;
-{$DEFINE FPC_DOTTEDUNITS}
-{$i vBLAS.pas}

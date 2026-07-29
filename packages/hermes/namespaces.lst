@@ -1,3 +1,0 @@
-src/hermes.pp=namespaced/Api.Hermes.pp
-{s*:src/}=namespaced/
-{i+:src/}

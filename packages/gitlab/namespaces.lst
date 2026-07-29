@@ -1,3 +1,0 @@
-src/gitlabclient.pas=namespaced/Api.Gitlab.Client.pas
-{s*:src/}=namespaced/
-{i+:src/}

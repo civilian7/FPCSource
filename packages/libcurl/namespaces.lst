@@ -1,3 +1,0 @@
-src/libcurl.pp=namespaced/Api.Libcurl.pp
-{s*:src/}=namespaced/
-{i+:src/}

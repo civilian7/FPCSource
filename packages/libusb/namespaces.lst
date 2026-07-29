@@ -1,3 +1,0 @@
-src/libusb.pp=namespaced/Api.Usb.pp
-{s*:src/}=namespaced/
-{i+:src/}

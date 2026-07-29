@@ -1,3 +1,0 @@
-unit AROSApi.Locale;
-{$DEFINE FPC_DOTTEDUNITS}
-{$i locale.pas}

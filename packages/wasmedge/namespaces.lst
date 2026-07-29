@@ -1,3 +1,0 @@
-src/libwasmedge.pp=namespaced/Api.WasmEdge.pp
-{s*:src/}=namespaced/
-{i+:src/}

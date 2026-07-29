@@ -1,3 +1,0 @@
-src/pcap.pp=namespaced/Api.Pcap.pp
-{s*:src/}=namespaced/
-{i+:src/}

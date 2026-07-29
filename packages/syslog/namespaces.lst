@@ -1,3 +1,0 @@
-src/systemlog.pp=namespaced/UnixApi.Systemlog.pp
-{s*:src/}=namespaced/
-{i+:src/}

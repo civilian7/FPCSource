@@ -1,3 +1,0 @@
-src/nvapi.pas=namespaced/Api.Nvapi.pas
-{s*:src/}=namespaced/
-{i+:src/}

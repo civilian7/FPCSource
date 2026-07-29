@@ -1,4 +1,0 @@
-src/uenetclass.pp=namespaced/Api.Uenetclass.pp
-{s*:src/}=namespaced/
-{i+:src/}
-src/enet.pp=namespaced/Api.Enet.pp

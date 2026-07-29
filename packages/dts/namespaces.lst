@@ -1,3 +1,0 @@
-src/dts.pas=namespaced/Api.Dts.pas
-{s*:src/}=namespaced/
-{i+:src/}
